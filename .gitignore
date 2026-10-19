@@ -1,0 +1,24 @@
+# Build outputs
+out/
+out-native/
+*.apk
+*.aab
+*.dex
+
+# Local build dependencies (NDK, downloaded sources) — not source
+downloads/
+
+# Keystores / keys / credentials — NEVER commit
+*.keystore
+*.jks
+*.pem
+*.key
+*.p12
+*.pfx
+*.env
+
+# OS / editor
+.DS_Store
+*.swp
+.idea/
+*.iml
