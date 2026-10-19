@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- v1.0.32: seamless brushed-steel background.
+     FIX: v1.0.31's steel_bg.png was a crop of the phone-mockup
+     reference that included the black area outside the phone
+     frame — its left ~40% was pure black, which rendered as the
+     vertical seam (black left half / steel right half).
+     This drawable tiles a CLEAN steel crop (drawable-nodpi/
+     steel_tile.png, cropped from the steel-only region) with
+     tileMode="mirror", so it covers the whole screen edge to
+     edge with no seam, no black half, and no stretch distortion.
+     nodpi: the tile renders at native pixels on every density,
+     so tiling stays predictable. -->
+<bitmap xmlns:android="http://schemas.android.com/apk/res/android"
+    android:src="@drawable/steel_tile"
+    android:tileMode="mirror" />

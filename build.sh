@@ -138,8 +138,8 @@ set -euo pipefail
 export JAVA_HOME=$HOME/jdk17
 export PATH=$JAVA_HOME/bin:$PATH
 
-VERSION_NAME="1.0.31"
-VERSION_CODE=32
+VERSION_NAME="1.0.32"
+VERSION_CODE=33
 APK_NAME="DZTerminal-${VERSION_NAME}.apk"
 
 SDK=~/android-sdk
