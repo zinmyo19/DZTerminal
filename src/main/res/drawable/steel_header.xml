@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- v1.0.31: brushed-steel header — same texture as the body
+     background, lifted with a faint white scrim so the header
+     band reads as brushed steel (see final mockup). -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@drawable/steel_bg" />
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#1AFFFFFF" />
+        </shape>
+    </item>
+</layer-list>

@@ -8,12 +8,16 @@ import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.PopupMenu
 import android.widget.Toast
 
 /**
  * Home screen — QPython-home-style layout:
- * big center ">_" terminal button + 5 cards.
+ * big center shield logo button + 4 shield cards.
+ * v1.0.31: shield Home per the approved final mockup.
+ * The Community card was removed from Home (CommunityActivity
+ * still exists, just unreachable from Home — reversible).
  */
 class MainActivity : Activity() {
 
@@ -24,7 +28,7 @@ class MainActivity : Activity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_home)
 
-        findViewById<Button>(R.id.home_terminal_button).setOnClickListener {
+        findViewById<ImageView>(R.id.home_terminal_button).setOnClickListener {
             startActivity(Intent(this, ConsoleActivity::class.java))
         }
         findViewById<Button>(R.id.home_menu).setOnClickListener { view ->
@@ -58,9 +62,6 @@ class MainActivity : Activity() {
         }
         card(R.id.card_qpypi).setOnClickListener {
             startActivity(Intent(this, QpypiActivity::class.java))
-        }
-        card(R.id.card_community).setOnClickListener {
-            startActivity(Intent(this, CommunityActivity::class.java))
         }
     }
 

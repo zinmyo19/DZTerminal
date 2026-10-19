@@ -1,20 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- v1.0.31: shield Home — brushed-steel background, shield logo
+     button, 4 shield-shaped cards (Community card removed).
+     Layout matches the user-approved final mockup. -->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fillViewport="true"
-    android:background="@color/dz_navy">
+    android:background="@drawable/steel_bg">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="20dp">
+        android:orientation="vertical">
 
-        <!-- Title row -->
+        <!-- Brushed-steel header -->
         <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:background="@drawable/steel_header"
+            android:padding="20dp">
 
             <LinearLayout
                 android:layout_width="wrap_content"
@@ -49,192 +53,159 @@
                 android:background="@android:color/transparent" />
         </RelativeLayout>
 
-        <!-- Big center terminal button -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center"
-            android:layout_marginTop="28dp"
-            android:layout_marginBottom="28dp">
+            android:orientation="vertical"
+            android:padding="20dp">
 
-            <Button
-                android:id="@+id/home_terminal_button"
-                android:layout_width="190dp"
-                android:layout_height="190dp"
-                android:background="@drawable/terminal_circle"
-                android:text="@string/terminal_glyph"
-                android:textSize="52sp"
-                android:textStyle="bold"
-                android:textColor="@color/dz_green" />
-        </LinearLayout>
-
-        <!-- Card row 1 -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-
+            <!-- Big center shield logo button -->
             <LinearLayout
-                android:id="@+id/card_console"
-                android:layout_width="0dp"
-                android:layout_height="130dp"
-                android:layout_weight="1"
-                android:layout_margin="6dp"
-                android:orientation="vertical"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
                 android:gravity="center"
-                android:clickable="true"
-                android:focusable="true"
-                android:background="@drawable/card_bg">
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="16dp">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/terminal_glyph"
-                    android:textSize="26sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/dz_green" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:text="@string/card_console"
-                    android:textSize="17sp"
-                    android:textColor="@color/dz_white" />
+                <ImageView
+                    android:id="@+id/home_terminal_button"
+                    android:layout_width="220dp"
+                    android:layout_height="260dp"
+                    android:src="@drawable/home_shield"
+                    android:scaleType="fitCenter"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="@android:color/transparent"
+                    android:contentDescription="@string/card_console" />
             </LinearLayout>
 
+            <!-- Shield card row 1 -->
             <LinearLayout
-                android:id="@+id/card_editor"
-                android:layout_width="0dp"
-                android:layout_height="130dp"
-                android:layout_weight="1"
-                android:layout_margin="6dp"
-                android:orientation="vertical"
-                android:gravity="center"
-                android:clickable="true"
-                android:focusable="true"
-                android:background="@drawable/card_bg">
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="✎"
-                    android:textSize="26sp"
-                    android:textColor="@color/dz_green" />
+                <LinearLayout
+                    android:id="@+id/card_console"
+                    android:layout_width="0dp"
+                    android:layout_height="170dp"
+                    android:layout_weight="1"
+                    android:layout_margin="6dp"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="@drawable/shield_card">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:text="@string/card_editor"
-                    android:textSize="17sp"
-                    android:textColor="@color/dz_white" />
-            </LinearLayout>
-        </LinearLayout>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/terminal_glyph"
+                        android:textSize="26sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/dz_green" />
 
-        <!-- Card row 2 -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:text="@string/card_console"
+                        android:textSize="17sp"
+                        android:textColor="@color/dz_white" />
+                </LinearLayout>
 
-            <LinearLayout
-                android:id="@+id/card_programs"
-                android:layout_width="0dp"
-                android:layout_height="130dp"
-                android:layout_weight="1"
-                android:layout_margin="6dp"
-                android:orientation="vertical"
-                android:gravity="center"
-                android:clickable="true"
-                android:focusable="true"
-                android:background="@drawable/card_bg">
+                <LinearLayout
+                    android:id="@+id/card_editor"
+                    android:layout_width="0dp"
+                    android:layout_height="170dp"
+                    android:layout_weight="1"
+                    android:layout_margin="6dp"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="@drawable/shield_card">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="&lt;/&gt;"
-                    android:textSize="26sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/dz_green" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="✎"
+                        android:textSize="26sp"
+                        android:textColor="@color/dz_green" />
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:text="@string/card_programs"
-                    android:textSize="17sp"
-                    android:textColor="@color/dz_white" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/card_qpypi"
-                android:layout_width="0dp"
-                android:layout_height="130dp"
-                android:layout_weight="1"
-                android:layout_margin="6dp"
-                android:orientation="vertical"
-                android:gravity="center"
-                android:clickable="true"
-                android:focusable="true"
-                android:background="@drawable/card_bg">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="▦"
-                    android:textSize="26sp"
-                    android:textColor="@color/dz_green" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:text="@string/card_qpypi"
-                    android:textSize="17sp"
-                    android:textColor="@color/dz_white" />
-            </LinearLayout>
-        </LinearLayout>
-
-        <!-- Card row 3 -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal">
-
-            <LinearLayout
-                android:id="@+id/card_community"
-                android:layout_width="0dp"
-                android:layout_height="130dp"
-                android:layout_weight="1"
-                android:layout_margin="6dp"
-                android:orientation="vertical"
-                android:gravity="center"
-                android:clickable="true"
-                android:focusable="true"
-                android:background="@drawable/card_bg">
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="◑"
-                    android:textSize="26sp"
-                    android:textColor="@color/dz_green" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:text="@string/card_community"
-                    android:textSize="17sp"
-                    android:textColor="@color/dz_white" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:text="@string/card_editor"
+                        android:textSize="17sp"
+                        android:textColor="@color/dz_white" />
+                </LinearLayout>
             </LinearLayout>
 
-            <View
-                android:layout_width="0dp"
-                android:layout_height="130dp"
-                android:layout_weight="1"
-                android:layout_margin="6dp" />
+            <!-- Shield card row 2 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:id="@+id/card_programs"
+                    android:layout_width="0dp"
+                    android:layout_height="170dp"
+                    android:layout_weight="1"
+                    android:layout_margin="6dp"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="@drawable/shield_card">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="&lt;/&gt;"
+                        android:textSize="26sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/dz_green" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:text="@string/card_programs"
+                        android:textSize="17sp"
+                        android:textColor="@color/dz_white" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/card_qpypi"
+                    android:layout_width="0dp"
+                    android:layout_height="170dp"
+                    android:layout_weight="1"
+                    android:layout_margin="6dp"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="@drawable/shield_card">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="▦"
+                        android:textSize="26sp"
+                        android:textColor="@color/dz_green" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:text="@string/card_qpypi"
+                        android:textSize="17sp"
+                        android:textColor="@color/dz_white" />
+                </LinearLayout>
+            </LinearLayout>
         </LinearLayout>
     </LinearLayout>
 </ScrollView>
