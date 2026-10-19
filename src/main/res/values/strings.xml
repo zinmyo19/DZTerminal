@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="dz_navy">#0A1A2F</color>
+    <color name="dz_card">#132A44</color>
+    <color name="dz_card_stroke">#1E3A5F</color>
+    <color name="dz_green">#2EEA7A</color>
+    <color name="dz_white">#FFFFFF</color>
+    <color name="dz_muted">#8FA3B8</color>
+    <color name="dz_black">#000000</color>
+    <color name="dz_console_bg">#000000</color>
+
+    <string name="app_name">DZ Terminal</string>
+    <string name="home_subtitle">Home</string>
+    <string name="menu">⋮</string>
+    <string name="terminal_glyph">&gt;_</string>
+    <string name="card_console">Console</string>
+    <string name="card_editor">Editor</string>
+    <string name="card_programs">Programs</string>
+    <string name="card_qpypi">QPYPI</string>
+    <string name="card_community">Community</string>
+    <string name="back">Back</string>
+    <string name="save">Save</string>
+    <string name="run">Run</string>
+    <string name="restart">Restart</string>
+    <string name="up">Up</string>
+    <string name="new_file">New</string>
+    <string name="install">Install</string>
+    <string name="package_hint">Package name, e.g. requests</string>
+    <string name="qypi_title">QPYPI</string>
+    <string name="qypi_note">Install Python packages with pip inside the Linux environment. Requires Python first: open Console and run pkg install python</string>
+    <string name="community_title">Community</string>
+    <string name="community_text">Community is coming soon.</string>
+    <string name="editor_title">Editor</string>
+    <string name="programs_title">Programs</string>
+    <string name="console_title">Console</string>
+    <string name="settings_title">Settings</string>
+    <string name="settings">Settings</string>
+    <string name="debug_title">Debug</string>
+    <string name="debug">Debug</string>
+    <string name="about">About</string>
+    <string name="copy">Copy</string>
+    <string name="test_proot">Test proot</string>
+    <string name="test_bash">Test bash</string>
+    <string name="import_file">Import</string>
+    <string name="qpython_scripts">QPython scripts</string>
+    <string name="home_files">Home files</string>
+    <string name="choose_folder">Choose folder</string>
+    <string name="qpython_not_set">Folder not set — tap to choose</string>
+    <string name="qpython_no_py">No .py files in this folder</string>
+    <string name="qpython_unavailable">QPython folder unavailable — please choose it again</string>
+    <string name="qpython_folder_set">QPython folder set</string>
+    <string name="qpython_change_folder">Change folder</string>
+    <string name="qpython_folder_not_found">Folder not found — tap Choose folder</string>
+    <string name="qpython_folder_invalid">Enter an absolute folder path without ..</string>
+    <string name="qpython_storage_need">Storage permission lets DZ Terminal list your QPython scripts directly.</string>
+    <string name="qpython_using_saf">Storage permission not granted — using folder picker instead</string>
+</resources>

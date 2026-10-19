@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="DzTheme" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/dz_navy</item>
+        <item name="android:colorBackground">@color/dz_navy</item>
+        <item name="android:textColor">@color/dz_white</item>
+        <item name="android:textColorPrimary">@color/dz_white</item>
+        <item name="android:textColorSecondary">@color/dz_muted</item>
+        <item name="android:colorAccent">@color/dz_green</item>
+    </style>
+</resources>

@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.zynelabs.dzterminal">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- v1.0.26: foreground service keeps sessions alive in the
+         background. Normal permission, granted at install, no prompt.
+         No foregroundServiceType: the type requirement applies to
+         apps targeting API 29+/34; this app targets SDK 28. No
+         POST_NOTIFICATIONS flow either: that runtime permission is
+         only for apps targeting API 33+; at targetSdk 28 the
+         service notification is allowed by default. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <!-- v1.0.11: direct read of the QPython scripts folder
+         (/sdcard/qpython/scripts3). At targetSdk 28 this grants
+         broad read; the SAF tree picker stays as the fallback when
+         it is denied. No write access is needed. -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <!-- v1.0.27: shell WRITES to shared storage (e.g.
+         `touch /sdcard/file`, `cp` into Downloads) need this.
+         READ alone only grants the read-only sdcard_r group, so
+         a write test would fail with EACCES. At targetSdk 28
+         WRITE implies READ, and both are requested together
+         on Console start (ConsoleActivity). -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+
+    <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
+
+    <application
+        android:name=".DzTerminalApp"
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:theme="@style/DzTheme"
+        android:extractNativeLibs="true">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".ConsoleActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize"
+            android:configChanges="orientation|screenSize|keyboardHidden|keyboard" />
+
+        <activity
+            android:name=".EditorActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".ProgramsActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".QpypiActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".CommunityActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".SettingsActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".DebugActivity"
+            android:exported="false" />
+
+        <!-- v1.0.26: owns session lifetime in the background:
+             foreground notification + partial wake lock while >= 1
+             session runs. Not exported; no FGS type (targetSdk 28). -->
+        <service
+            android:name=".SessionService"
+            android:exported="false" />
+
+    </application>
+</manifest>
