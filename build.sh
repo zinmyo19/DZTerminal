@@ -138,8 +138,22 @@ set -euo pipefail
 export JAVA_HOME=$HOME/jdk17
 export PATH=$JAVA_HOME/bin:$PATH
 
-VERSION_NAME="1.0.41"
-VERSION_CODE=42
+# v1.0.44: RESPONSIVE Home — the gear row moved out of the
+# content column to be the root's last child and the column
+# became weighted (0dp + weight 1), so the gear sits at the
+# window bottom by construction; MainActivity.fitHomeToScreen()
+# scales the shield+card block (200x220 + 140x158 x2) to the
+# column's measured height (clamped 0.62..1.0 of design,
+# aspect preserved; tall screens keep v1.0.43 design sizes).
+# Fixes the wife's-Oppo overflow where the bottom card row
+# was clipped and the gear row was pushed to the bottom edge.
+# v1.0.45: the Console welcome catalog is shifted one character
+# right — every catalog line is prefixed with one space (only the
+# catalog; nothing else moves). The catalog printed flush against
+# the left edge and its first letters were half-clipped on
+# physical phones.
+VERSION_NAME="1.0.46"
+VERSION_CODE=47
 APK_NAME="DZTerminal-${VERSION_NAME}.apk"
 
 SDK=~/android-sdk

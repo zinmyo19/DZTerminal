@@ -1,5 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- v1.0.36: tightened further (user: push up again).
+<!-- v1.0.44: RESPONSIVE — fixes the short-screen overflow
+     (wife's Oppo: Programs/QPYPI clipped, gear pushed off the
+     bottom edge — and the gear carries Settings/About/
+     Export/Import, so it was reported as "Settings is missing
+     on the home page"). Three construction changes:
+     (1) The gear row MOVED OUT of the content column to be the
+         root's LAST child, and the content column is now
+         layout_height=0dp + layout_weight=1: the middle absorbs
+         ALL size error, so the gear sits at the bottom of the
+         window BY CONSTRUCTION — it cannot be pushed off-screen.
+     (2) MainActivity.fitHomeToScreen() scales the shield +
+         cards to fit the middle column's MEASURED height
+         (scale = avail/design, clamped 0.62..1.0, width and
+         height scaled together — aspect preserved, no squash;
+         floor-rounded so it can never re-overflow by a pixel).
+     (3) Top stays tight per the user: header padding 0 (banner
+         hugs the top), shield wrapper margins 0 (big shield
+         sits right under the banner). On tall screens the scale
+         is exactly 1.0 — v1.0.43 design sizes, group at the top,
+         freed space collects between the cards and the
+         bottom-pinned gear.
+     Fit (design total 637dp incl. header ~31 + gear row 56):
+       usable 560 -> middle 473, scale 0.856, total 559
+       usable 600 -> middle 513, scale 0.931, total 599
+       usable 800 -> scale 1.0 (design sizes), gear at bottom
+     v1.0.43: RAISED (user: "home logo တွေက နိမ့်နေတယ်" — the
+     logos sit too low) + big shield press glow.
+     Glow: home_terminal_button src is now a selector
+     (@drawable/home_shield_selector) -> pressed/focused shows
+     home_shield_active (green rim + aura), same feedback the 4
+     small cards get from @drawable/shield_card.
+     Raise (before -> after): header band padding 2 -> 0dp,
+     banner plate padding 4 -> 3dp, big shield 200x236 -> 200x220,
+     shield wrapper marginBottom 2 -> 0dp, cards 140x168 -> 140x158,
+     gear row marginTop 4 -> 2dp. Header ~37 -> ~31dp, content
+     ~646 -> ~606dp, total ~683 -> ~637dp (-46dp): the whole group
+     starts higher and the gear lifts ~46dp off the bottom edge.
+     Gear keeps marginBottom 6dp + content paddingBottom 6dp, so
+     it stays fully visible (no repeat of v1.0.34's clipping).
+     v1.0.36: tightened further (user: push up again).
      v1.0.35: tighten-up — everything moves UP, gear fully visible.
      v1.0.34's gear was half-clipped at the bottom edge and the
      banner sat too low. Tightened: header padding 10 -> 4dp,
@@ -7,9 +46,9 @@
      content top padding 6 -> 0dp, content bottom 6 -> 10dp,
      shield margins 4/8 -> 0/4dp, card row gaps 10 -> 6dp,
      gear row marginTop 2 -> 6dp + marginBottom 10dp (the gear
-     never sits flush with the screen edge again).
-     Shield stays 200x236, cards stay 140x168. Total ~710dp. -->
+     never sits flush with the screen edge again). -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/home_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
@@ -17,12 +56,13 @@
 
     <!-- Banner header: centered framed title, no 3-dot menu -->
     <LinearLayout
+        android:id="@+id/home_header"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center"
         android:background="@drawable/steel_header"
-        android:padding="2dp">
+        android:padding="0dp">
 
         <TextView
             android:layout_width="wrap_content"
@@ -30,36 +70,43 @@
             android:background="@drawable/banner_plate"
             android:paddingStart="18dp"
             android:paddingEnd="18dp"
-            android:paddingTop="4dp"
-            android:paddingBottom="4dp"
+            android:paddingTop="3dp"
+            android:paddingBottom="3dp"
             android:text="@string/app_name"
             android:textSize="20sp"
             android:textStyle="bold"
             android:textColor="@color/dz_white" />
     </LinearLayout>
 
+    <!-- v1.0.44: height 0dp + weight 1 — this middle column
+         absorbs all leftover/shortfall; its children are
+         runtime-scaled to fit it (fitHomeToScreen). -->
     <LinearLayout
+        android:id="@+id/home_content"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:orientation="vertical"
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
         android:paddingTop="0dp"
         android:paddingBottom="6dp">
 
-        <!-- Big center shield logo button: FIXED 200x236dp -->
+        <!-- Big center shield logo button: FIXED 200x220dp.
+             v1.0.43: src is a selector — pressed/focused shows the
+             green-glow variant, same as the small shield cards. -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center"
             android:layout_marginTop="0dp"
-            android:layout_marginBottom="2dp">
+            android:layout_marginBottom="0dp">
 
             <ImageView
                 android:id="@+id/home_terminal_button"
                 android:layout_width="200dp"
-                android:layout_height="236dp"
-                android:src="@drawable/home_shield"
+                android:layout_height="220dp"
+                android:src="@drawable/home_shield_selector"
                 android:scaleType="fitCenter"
                 android:clickable="true"
                 android:focusable="true"
@@ -67,8 +114,9 @@
                 android:contentDescription="@string/card_console" />
         </LinearLayout>
 
-        <!-- Shield card row 1: FIXED 140x168dp cards, 16dp gap -->
+        <!-- Shield card row 1: FIXED 140x158dp cards, 16dp gap -->
         <LinearLayout
+            android:id="@+id/home_row1"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
@@ -78,7 +126,7 @@
             <LinearLayout
                 android:id="@+id/card_console"
                 android:layout_width="140dp"
-                android:layout_height="168dp"
+                android:layout_height="158dp"
                 android:orientation="vertical"
                 android:gravity="center"
                 android:clickable="true"
@@ -105,7 +153,7 @@
             <LinearLayout
                 android:id="@+id/card_editor"
                 android:layout_width="140dp"
-                android:layout_height="168dp"
+                android:layout_height="158dp"
                 android:layout_marginStart="16dp"
                 android:orientation="vertical"
                 android:gravity="center"
@@ -130,8 +178,9 @@
             </LinearLayout>
         </LinearLayout>
 
-        <!-- Shield card row 2: FIXED 140x168dp cards, 16dp gap -->
+        <!-- Shield card row 2: FIXED 140x158dp cards, 16dp gap -->
         <LinearLayout
+            android:id="@+id/home_row2"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
@@ -141,7 +190,7 @@
             <LinearLayout
                 android:id="@+id/card_programs"
                 android:layout_width="140dp"
-                android:layout_height="168dp"
+                android:layout_height="158dp"
                 android:orientation="vertical"
                 android:gravity="center"
                 android:clickable="true"
@@ -168,7 +217,7 @@
             <LinearLayout
                 android:id="@+id/card_qpypi"
                 android:layout_width="140dp"
-                android:layout_height="168dp"
+                android:layout_height="158dp"
                 android:layout_marginStart="16dp"
                 android:orientation="vertical"
                 android:gravity="center"
@@ -192,28 +241,31 @@
                     android:textColor="@color/dz_white" />
             </LinearLayout>
         </LinearLayout>
+    </LinearLayout>
 
-        <!-- Gear menu button: CENTERED below the bottom shields.
-             Opens the same menu the 3-dot had. -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+    <!-- v1.0.44: gear row is the root's LAST child — it sits
+         at the bottom of the window by construction (the middle
+         column above it is weighted), so it can never be pushed
+         off-screen on short phones. -->
+    <LinearLayout
+        android:id="@+id/home_gear_row"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:layout_marginTop="2dp"
+        android:layout_marginBottom="6dp">
+
+        <TextView
+            android:id="@+id/home_gear"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@drawable/gear_button_bg"
             android:gravity="center"
-            android:layout_marginTop="4dp"
-            android:layout_marginBottom="6dp">
-
-            <TextView
-                android:id="@+id/home_gear"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:background="@drawable/gear_button_bg"
-                android:gravity="center"
-                android:text="&#x2699;&#xFE0E;"
-                android:textSize="26sp"
-                android:textColor="@color/dz_green"
-                android:clickable="true"
-                android:focusable="true"
-                android:contentDescription="Menu" />
-        </LinearLayout>
+            android:text="&#x2699;&#xFE0E;"
+            android:textSize="26sp"
+            android:textColor="@color/dz_green"
+            android:clickable="true"
+            android:focusable="true"
+            android:contentDescription="Menu" />
     </LinearLayout>
 </LinearLayout>

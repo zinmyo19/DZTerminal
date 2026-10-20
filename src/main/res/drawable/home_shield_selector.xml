@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- v1.0.43: big Home shield press feedback — same pattern as
+     @drawable/shield_card for the 4 small cards: pressed/focused
+     shows the glowing variant (green rim + aura, generated from
+     home_shield.png), default shows the normal logo. The user
+     noticed the small cards lit up green on touch but the big
+     shield did not ("မျက်နှာလိုက်လိုက်တာ" — playing favorites). -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_focused="true" android:drawable="@drawable/home_shield_active" />
+    <item android:state_pressed="true" android:drawable="@drawable/home_shield_active" />
+    <item android:drawable="@drawable/home_shield" />
+</selector>

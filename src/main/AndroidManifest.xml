@@ -70,6 +70,14 @@
             android:name=".CommunityActivity"
             android:exported="false" />
 
+        <!-- v1.0.42: Settings is back, MINIMAL — its ONLY content
+             is the Console font-size control (slider + preview).
+             No Debug (removed for good in v1.0.41), no About
+             (it lives in the Home gear menu). -->
+        <activity
+            android:name=".SettingsActivity"
+            android:exported="false" />
+
         <!-- v1.0.26: owns session lifetime in the background:
              foreground notification + partial wake lock while >= 1
              session runs. Not exported; no FGS type (targetSdk 28). -->

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- v1.0.42: Settings is back, MINIMAL — the ONLY control is the
+     Console font size (slider + value + live preview). No header
+     bar (system BACK returns, same as the other inner screens
+     since v1.0.40). No Debug, no About. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/steel_bg"
+    android:padding="20dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/settings_title"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="@color/dz_white" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="28dp"
+        android:text="@string/font_size_label"
+        android:textSize="15sp"
+        android:textColor="@color/dz_white" />
+
+    <SeekBar
+        android:id="@+id/settings_font_seek"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp" />
+
+    <TextView
+        android:id="@+id/settings_font_value"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:textSize="14sp"
+        android:textColor="@color/dz_green" />
+
+    <TextView
+        android:id="@+id/settings_font_preview"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="18dp"
+        android:padding="12dp"
+        android:background="@color/dz_console_bg"
+        android:textColor="@color/dz_white"
+        android:typeface="monospace"
+        android:text="~ $ echo hello&#10;hello" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:text="@string/font_size_note"
+        android:textSize="12sp"
+        android:textColor="@color/dz_muted" />
+
+</LinearLayout>

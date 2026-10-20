@@ -31,7 +31,12 @@
          AUTO-HIDDEN when <= 1 session exists (rebuildTabs) — a
          single session looks exactly like Termux; the bar appears
          when a 2nd tab is opened. One tab per session (number +
-         close ×), "+" at the end adds a session (cap 8). -->
+         close ×). New tabs are opened from the floating ⋮ menu.
+         v1.0.46: the "+" button at the right end is REMOVED — it
+         overlapped the floating ⋮ menu button, which must stay
+         fully visible/tappable. The strip is now pure BLACK like
+         the terminal (dz_console_bg) with slim 1dp vertical
+         padding: the whole Console reads as one black screen. -->
     <LinearLayout
         android:id="@+id/tab_bar"
         android:layout_width="match_parent"
@@ -39,18 +44,17 @@
         android:layout_alignParentTop="true"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:background="@color/dz_navy"
+        android:background="@color/dz_console_bg"
         android:paddingStart="8dp"
         android:paddingEnd="4dp"
-        android:paddingTop="2dp"
-        android:paddingBottom="2dp"
+        android:paddingTop="1dp"
+        android:paddingBottom="1dp"
         android:visibility="gone">
 
         <HorizontalScrollView
             android:id="@+id/tab_bar_scroll"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
             android:scrollbars="none">
 
             <LinearLayout
@@ -59,22 +63,6 @@
                 android:layout_height="wrap_content"
                 android:orientation="horizontal" />
         </HorizontalScrollView>
-
-        <Button
-            android:id="@+id/tab_add"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="+"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:textColor="@color/dz_green"
-            android:background="@android:color/transparent"
-            android:minWidth="0dp"
-            android:minHeight="0dp"
-            android:paddingStart="12dp"
-            android:paddingEnd="12dp"
-            android:focusable="false"
-            android:focusableInTouchMode="false" />
     </LinearLayout>
 
     <TextView

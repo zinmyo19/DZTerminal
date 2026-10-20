@@ -42,8 +42,15 @@ class ConsoleActivity : Activity() {
     private lateinit var tabBarScroll: android.widget.HorizontalScrollView
     private val mainHandler = Handler(Looper.getMainLooper())
 
-    /** Max Console sessions (tabs). "+" does nothing at the cap. */
+    /** Max Console sessions (tabs). "New tab" does nothing at the cap. */
     private val maxSessions = 8
+
+    /** v1.0.42: current Console font size (sp) — the in-memory copy
+     *  of the persisted FontPrefs value. Pinch zoom
+     *  (viewClient.onScale) and the Settings slider both write
+     *  through it; onResume re-reads the persisted value so the
+     *  two can never disagree. */
+    private var fontSizeSp: Int = FontPrefs.DEFAULT_SP
 
     /** Sticky-modifier state for the extra-keys bar (v1.0.10). */
     private var ctrlArmed = false
@@ -149,7 +156,23 @@ class ConsoleActivity : Activity() {
     }
 
     private val viewClient = object : TerminalViewClient {
-        override fun onScale(scale: Float): Float = 1.0f // pinch-zoom off in v1
+        // v1.0.42: pinch zoom, Termux-style. The vendored
+        // TerminalView accumulates the scale factor and hands it
+        // here; crossing 1.1 steps the font UP 1sp, dropping below
+        // 0.9 steps it DOWN 1sp. Returning 1.0f resets the
+        // accumulator so each step is a deliberate pinch movement.
+        // (The v1 line below stubbed this to 1.0f — pinch was
+        // deliberately off then.)
+        override fun onScale(scale: Float): Float {
+            if (scale < 0.9f || scale > 1.1f) {
+                val target = fontSizeSp + if (scale > 1f) 1 else -1
+                if (target in FontPrefs.MIN_SP..FontPrefs.MAX_SP) {
+                    applyFontSizeSp(target)
+                }
+                return 1.0f
+            }
+            return scale
+        }
         override fun onSingleTapUp(e: MotionEvent) {
             terminalView.requestFocus()
             val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
@@ -244,17 +267,19 @@ class ConsoleActivity : Activity() {
         findViewById<Button>(R.id.console_menu_button).setOnClickListener { v ->
             showConsoleMenu(v)
         }
-        findViewById<Button>(R.id.tab_add).setOnClickListener { addSession() }
+        // v1.0.46: the tab bar's "+" button is gone (it overlapped
+        // the floating ⋮); "New tab" lives in the ⋮ menu only.
         val rippleValue = TypedValue()
         theme.resolveAttribute(android.R.attr.selectableItemBackground, rippleValue, true)
         rippleBgRes = rippleValue.resourceId
         buildExtraKeys()
         installKeyboardLayoutWatcher()
 
-        val textSizePx = TypedValue.applyDimension(
-            TypedValue.COMPLEX_UNIT_SP, 15f, resources.displayMetrics
-        ).toInt()
-        terminalView.setTextSize(textSizePx)
+        // v1.0.42: restore the persisted font size — default 15sp
+        // is the exact v1.0–v1.0.41 rendering, so existing users
+        // see no change until they pinch or move the slider.
+        fontSizeSp = FontPrefs.getSp(this)
+        terminalView.setTextSize(FontPrefs.spToPx(this, fontSizeSp))
         terminalView.setTerminalViewClient(viewClient)
         // v1.0.33: belt & braces — the TerminalView is the ONLY
         // focusable view in Console (header/tab/extra-key buttons
@@ -376,6 +401,14 @@ class ConsoleActivity : Activity() {
 
     override fun onResume() {
         super.onResume()
+        // v1.0.42: the Settings slider may have changed the font
+        // size while the Console sat paused behind it — pick the
+        // persisted value up so pinch and slider never disagree.
+        val persistedSp = FontPrefs.getSp(this)
+        if (persistedSp != fontSizeSp) {
+            fontSizeSp = persistedSp
+            terminalView.setTextSize(FontPrefs.spToPx(this, persistedSp))
+        }
         val app = application as DzTerminalApp
         val session = app.session
         if (session != null) {
@@ -413,20 +446,25 @@ class ConsoleActivity : Activity() {
     //
     // The removed header bar's functions, in the small ⋮ button
     // floating top-right over the terminal: New tab / Restart
-    // session / Home. ("New tab" is also the only way
+    // session / Settings / Home. ("New tab" is also the only way
     // to add a tab while the tab bar is auto-hidden at 1 tab.)
-    // v1.0.41: the "Settings" entry was removed (its screen only
-    // held Debug + About; About lives in the Home gear menu).
+    // v1.0.42: "Settings" is back — MINIMAL: only the Console
+    // font-size control (slider). No Debug, no About.
 
     private fun showConsoleMenu(anchor: View) {
         val popup = PopupMenu(this, anchor)
         popup.menu.add(0, MENU_NEW_TAB, 0, "New tab")
         popup.menu.add(0, MENU_RESTART, 1, "Restart session")
-        popup.menu.add(0, MENU_HOME, 2, "Home")
+        popup.menu.add(0, MENU_SETTINGS, 2, "Settings")
+        popup.menu.add(0, MENU_HOME, 3, "Home")
         popup.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 MENU_NEW_TAB -> { addSession(); true }
                 MENU_RESTART -> { restartSession(); true }
+                MENU_SETTINGS -> {
+                    startActivity(Intent(this, SettingsActivity::class.java))
+                    true
+                }
                 MENU_HOME -> { finish(); true }
                 else -> false
             }
@@ -558,6 +596,20 @@ class ConsoleActivity : Activity() {
     private fun dpToPx(dp: Int): Int =
         (dp * resources.displayMetrics.density).toInt()
 
+    /**
+     * v1.0.42: apply + persist the Console font size (sp).
+     * TerminalView.setTextSize rebuilds the renderer and
+     * updateSize() recalculates the grid (columns/rows) and
+     * notifies the session (TerminalSession.updateSize), so the
+     * shell reflows to the new size — no clipped rendering.
+     * Pinch zoom writes through here; the Settings slider writes
+     * the same FontPrefs value and is picked up in onResume.
+     */
+    private fun applyFontSizeSp(sp: Int) {
+        fontSizeSp = FontPrefs.setSp(this, sp)
+        terminalView.setTextSize(FontPrefs.spToPx(this, fontSizeSp))
+    }
+
     private fun onExtraKey(key: ExtraKey) {
         if (key.modifier == 1) {
             ctrlArmed = !ctrlArmed
@@ -682,7 +734,7 @@ class ConsoleActivity : Activity() {
     /**
      * The guarded body of startSession (runs on a background thread).
      * append=true: the new session becomes a NEW tab (first session,
-     * or "+") and takes focus. append=false: it REPLACES the current
+     * or ⋮ "New tab") and takes focus. append=false: it REPLACES the current
      * tab (RESTART) — pinned to [replaceTarget] BY IDENTITY, not by
      * index: if the user switched tabs (or closed the restarting
      * tab) while the new shell was starting, the new session must
@@ -926,7 +978,7 @@ class ConsoleActivity : Activity() {
     // stable ids — closing tab 2 renumbers 3..N down by one, which
     // keeps the bar trivially in sync.
 
-    /** "+" button: a new independent shell in a new tab (cap 8). */
+    /** ⋮ menu "New tab": a new independent shell in a new tab (cap 8). */
     private fun addSession() {
         val app = application as DzTerminalApp
         if (app.sessions.size >= maxSessions) {
@@ -1097,26 +1149,40 @@ class ConsoleActivity : Activity() {
         }
     }
 
-    /** One tab: number label + close ×. */
+    /**
+     * One tab: number label + close ×.
+     * v1.0.46: MONOCHROME + COMPACT — no colors anywhere: the tab
+     * box is pure black like the strip and the terminal, so the
+     * whole Console screen reads black. The current tab is told
+     * apart WITHOUT color: bright-white BOLD number + white ×;
+     * inactive tabs use dimmer gray-white (dz_muted). The box is
+     * also much shorter than before (26dp row vs 40dp: 1dp
+     * vertical padding + a 24dp × hitbox instead of 4dp + 32dp)
+     * and hugs its "N ×" content with tighter horizontal padding.
+     */
     private fun makeTabView(index: Int, selected: Boolean, closeVisible: Boolean): View {
         val row = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = android.view.Gravity.CENTER_VERTICAL
-            setPadding(dpToPx(10), dpToPx(4), dpToPx(4), dpToPx(4))
-            setBackgroundColor(
-                if (selected) getColor(R.color.dz_green) else getColor(R.color.dz_card)
-            )
+            setPadding(dpToPx(8), dpToPx(1), dpToPx(2), dpToPx(1))
+            setBackgroundColor(getColor(R.color.dz_black))
         }
         val label = TextView(this).apply {
             text = (index + 1).toString()
             textSize = 14f
-            setTypeface(null, android.graphics.Typeface.BOLD)
-            setTextColor(if (selected) getColor(R.color.dz_black) else getColor(R.color.dz_white))
-            // v1.0.23: ≥12dp gap between the number and the × — the
-            // old 4dp gap let a tap on the tab label land on the ×
-            // and close the tab by accident. No close-confirmation
-            // dialog: the × now has its own clearly separated hit area.
-            setPadding(0, 0, dpToPx(12), 0)
+            // v1.0.46: bold ONLY on the current tab (brightness +
+            // weight replace the old green fill as the cue).
+            setTypeface(
+                null,
+                if (selected) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL
+            )
+            setTextColor(if (selected) getColor(R.color.dz_white) else getColor(R.color.dz_muted))
+            // v1.0.23: keep a real gap between the number and the
+            // × so a tap on the label can't land on the × and close
+            // the tab by accident (8dp here + 4dp × margin = 12dp).
+            // No close-confirmation dialog: the × has its own
+            // clearly separated hit area.
+            setPadding(0, 0, dpToPx(8), 0)
         }
         row.addView(label)
         val close = Button(this).apply {
@@ -1127,20 +1193,20 @@ class ConsoleActivity : Activity() {
             minimumHeight = 0
             minHeight = 0
             setPadding(dpToPx(4), 0, dpToPx(4), 0)
-            setTextColor(if (selected) getColor(R.color.dz_black) else getColor(R.color.dz_muted))
+            setTextColor(if (selected) getColor(R.color.dz_white) else getColor(R.color.dz_muted))
             setBackgroundResource(android.R.color.transparent)
             isFocusable = false
             isFocusableInTouchMode = false
             visibility = if (closeVisible) View.VISIBLE else View.GONE
             setOnClickListener { closeSession(index) }
         }
-        // v1.0.23: the × gets a FIXED 32×32dp hitbox with a 6dp
-        // left margin (total number→× gap = 12 + 6 = 18dp) instead
-        // of WRAP_CONTENT bleeding into the label — it fires only
-        // on a deliberate tap on the × itself; taps on the number
-        // hit the row (switch tab).
-        val closeLp = LinearLayout.LayoutParams(dpToPx(32), dpToPx(32))
-        closeLp.leftMargin = dpToPx(6)
+        // The × keeps a FIXED square hitbox (v1.0.46: 24×24dp,
+        // down from 32×32 — part of the compact tab strip) with a
+        // 4dp left margin instead of WRAP_CONTENT bleeding into
+        // the label — it fires only on a deliberate tap on the ×
+        // itself; taps on the number hit the row (switch tab).
+        val closeLp = LinearLayout.LayoutParams(dpToPx(24), dpToPx(24))
+        closeLp.leftMargin = dpToPx(4)
         row.addView(close, closeLp)
         row.setOnClickListener { switchTo(index) }
         row.isFocusable = false
@@ -1149,7 +1215,7 @@ class ConsoleActivity : Activity() {
             LinearLayout.LayoutParams.WRAP_CONTENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
         )
-        lp.setMargins(0, 0, dpToPx(6), 0)
+        lp.setMargins(0, 0, dpToPx(4), 0)
         row.layoutParams = lp
         return row
     }
@@ -1204,10 +1270,11 @@ class ConsoleActivity : Activity() {
         private const val PREFS = "dz_terminal_prefs"
         private const val KEY_STORAGE_PERM_ASKED = "storage_perm_asked_v1027"
         private const val STORAGE_PERM_REQUEST = 1004
-        /** Floating-menu item ids (v1.0.39). */
+        /** Floating-menu item ids (v1.0.39; v1.0.42 adds MENU_SETTINGS). */
         private const val MENU_NEW_TAB = 1
         private const val MENU_RESTART = 2
-        private const val MENU_HOME = 3
+        private const val MENU_SETTINGS = 3
+        private const val MENU_HOME = 4
         /** Opens the Console and runs a shell command once the shell is ready. */
         fun openWithCommand(context: Context, command: String) {
             DzTerminalApp.pendingConsoleCommand = command

@@ -8,8 +8,11 @@ import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.PopupMenu
 import android.widget.Toast
+import kotlin.math.floor
+import kotlin.math.min
 
 /**
  * Home screen — QPython-home-style layout:
@@ -30,12 +33,12 @@ class MainActivity : Activity() {
         findViewById<ImageView>(R.id.home_terminal_button).setOnClickListener {
             startActivity(Intent(this, ConsoleActivity::class.java))
         }
-        // v1.0.41: the header 3-dot is gone — the gear icon centered
-        // below the bottom shields opens the menu (About / Export /
-        // Import). The redundant "Settings" entry was removed; About
-        // opens its dialog directly from here.
+        // v1.0.42: "Settings" is back in the gear menu — MINIMAL:
+        // only the Console font-size control (slider). No Debug,
+        // no About inside it (About stays here in the menu).
         findViewById<View>(R.id.home_gear).setOnClickListener { view ->
             val popup = PopupMenu(this, view)
+            popup.menu.add("Settings")
             popup.menu.add("About")
             // v1.0.28: Export / Import home files <-> shared
             // storage (file-manager visibility). Lives in the
@@ -44,6 +47,8 @@ class MainActivity : Activity() {
             popup.menu.add("Import from file manager")
             popup.setOnMenuItemClickListener { item ->
                 when (item.title.toString()) {
+                    "Settings" ->
+                        startActivity(Intent(this, SettingsActivity::class.java))
                     "About" -> showAbout()
                     "Export to file manager" -> runFileAction("export")
                     "Import from file manager" -> runFileAction("import")
@@ -64,9 +69,99 @@ class MainActivity : Activity() {
         card(R.id.card_qpypi).setOnClickListener {
             startActivity(Intent(this, QpypiActivity::class.java))
         }
+        // v1.0.44: scale the shield block to fit the window
+        // (see fitHomeToScreen). Runs on every layout pass but
+        // only touches layout params when a size actually
+        // changes, and is exactly the v1.0.43 design on tall
+        // screens, so it settles after the first pass.
+        findViewById<View>(R.id.home_root).viewTreeObserver
+            .addOnGlobalLayoutListener { fitHomeToScreen() }
     }
 
     private fun card(id: Int): View = findViewById(id)
+
+    /**
+     * v1.0.44: RESPONSIVE Home. The v1.0.43 layout was a fixed
+     * ~637dp stack; on a short screen (~560-600dp usable, e.g.
+     * the wife's Oppo, even at the smallest system display
+     * size) it overflowed — the Programs/QPYPI row was clipped
+     * and the gear row (the only path to Settings/About/
+     * Export/Import) ended up at the very bottom edge,
+     * untappable.
+     *
+     * Construction (activity_home.xml): the gear row is the
+     * root's LAST child and the middle column (home_content)
+     * is layout_height=0dp + layout_weight=1, so the gear sits
+     * at the bottom of the window BY CONSTRUCTION and the
+     * middle absorbs all size error. This method then scales
+     * the middle's flexible block — big shield (200x220) +
+     * cards (140x158 x2 rows) — to fit the middle column's
+     * MEASURED height: scale = (content height - the column's
+     * fixed padding/gaps) / design, clamped to [0.62, 1.0].
+     * Width and height scale by the SAME factor, so shields
+     * shrink proportionally and never squash (the ImageView
+     * is fitCenter; card backgrounds stretch with their views
+     * at the preserved aspect). A width guard covers narrow
+     * screens. On tall screens the scale is exactly 1.0 and
+     * the sizes written are the v1.0.43 design sizes; the
+     * freed space collects below the cards, above the
+     * bottom-pinned gear — sizes never stretch.
+     */
+    private fun fitHomeToScreen() {
+        val content = findViewById<View>(R.id.home_content)
+        val availH = content.height
+        if (availH <= 0) return
+        val density = resources.displayMetrics.density
+        fun dpF(v: Float) = v * density
+
+        val row1 = findViewById<View>(R.id.home_row1)
+        val row2 = findViewById<View>(R.id.home_row2)
+        fun bottomMargin(v: View) =
+            (v.layoutParams as LinearLayout.LayoutParams).bottomMargin
+
+        // Fixed inside the middle column (px): its vertical
+        // padding + the two 4dp row gaps. Header and gear row
+        // are NOT in this math — they are outside the weighted
+        // column and fit by construction.
+        val fixedPx = content.paddingTop + content.paddingBottom +
+            bottomMargin(row1) + bottomMargin(row2)
+        // Flexible block at design size (px): 220 + 158 + 158.
+        val designFlexPx = dpF(220f + 158f + 158f)
+        var scale = (availH - fixedPx) / designFlexPx
+        // Narrow-screen guard: card row = 2 cards + 16dp gap,
+        // big shield = 200dp, both inside the column padding.
+        val availW = content.width - content.paddingStart - content.paddingEnd
+        if (availW > 0) {
+            scale = min(scale, availW / dpF(140f * 2 + 16f))
+            scale = min(scale, availW / dpF(200f))
+        }
+        val s = scale.coerceIn(0.62f, 1.0f)
+        // Floor (never round) so the scaled stack can never
+        // exceed the available height by a rounding pixel.
+        setSize(
+            R.id.home_terminal_button,
+            floor(dpF(200f) * s).toInt(), floor(dpF(220f) * s).toInt()
+        )
+        val cardW = floor(dpF(140f) * s).toInt()
+        val cardH = floor(dpF(158f) * s).toInt()
+        for (id in intArrayOf(
+            R.id.card_console, R.id.card_editor,
+            R.id.card_programs, R.id.card_qpypi
+        )) {
+            setSize(id, cardW, cardH)
+        }
+    }
+
+    /** Writes a pixel size only when it actually changes (keeps the layout listener a no-op once settled). */
+    private fun setSize(id: Int, wPx: Int, hPx: Int) {
+        val v = findViewById<View>(id)
+        val lp = v.layoutParams
+        if (lp.width != wPx || lp.height != hPx) {
+            lp.width = wPx
+            lp.height = hPx
+            v.layoutParams = lp
+        }
+    }
 
     /**
      * v1.0.28: Export / Import home files <-> shared storage.
