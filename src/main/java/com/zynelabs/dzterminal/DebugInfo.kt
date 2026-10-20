@@ -6,11 +6,17 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * Read-only diagnostics for the Settings > Debug screen.
+ * In-memory diagnostics sink. Setup state is appended here by
+ * PrefixSetup; the last session's exit info is recorded by
+ * ConsoleActivity when a session finishes; storage/probe state is
+ * written by SessionManager / HomeFileSync.
  *
- * In-memory only (cleared when the app process dies). The setup log is
- * appended here by PrefixSetup; the last session's exit info is recorded
- * by ConsoleActivity when a session finishes.
+ * v1.0.41: the Settings screen and the Debug screen were removed by
+ * user request, so this data is no longer displayed in the app. The
+ * sink stays because the non-UI writers above still record into it;
+ * crash diagnostics live separately in CrashLog (files/crash.log).
+ *
+ * In-memory only (cleared when the app process dies).
  */
 object DebugInfo {
 
@@ -19,6 +25,12 @@ object DebugInfo {
     private val setupLogLines = ArrayDeque<String>()
 
     @Volatile var lastSetupResult: String? = null
+    /** v1.0.34: result of the last Debug "Test input" self-test. */
+    @Volatile var lastInputSelfTest: String = "(not run yet)"
+    /** v1.0.35: TerminalView measured geometry after layout (w/h,
+     * visibility, attached, background present, container size).
+     * Proves whether the view actually occupies the terminal area. */
+    @Volatile var lastTerminalViewGeometry: String = "(not measured yet)"
     @Volatile var lastSessionExitCode: Int? = null
     @Volatile var lastSessionEndedAt: Long = 0L
     @Volatile var lastSessionTranscriptTail: String = ""
@@ -130,6 +142,17 @@ object DebugInfo {
                 .append("lastDrain=$lastDrainText ")
                 .append("lastInput=$lastInputText ")
                 .append("msgs=${s.handlerMessageCount}\n")
+            // v1.0.34: per-tab INPUT counters — proof of where typing
+            // goes. Read: commitText>0 + inBytes==0 = the IME
+            // delivered but session.write never ran; commitText==0 =
+            // the IME never delivered to the view at all.
+            sb.append("  input: imeConn=${s.inputConnectionCreations} ")
+                .append("commitText=${s.inputCommitTextCalls} ")
+                .append("composing=${s.inputSetComposingCalls} ")
+                .append("del=${s.inputDeleteSurroundingCalls} ")
+                .append("keyEv=${s.inputKeyEventCalls} ")
+                .append("inBytes=${s.inputBytesWritten}B ")
+                .append("lastText=\"${s.lastInputText}\"\n")
         }
         return sb.toString().trimEnd()
     }

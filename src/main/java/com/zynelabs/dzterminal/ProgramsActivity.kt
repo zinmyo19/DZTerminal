@@ -11,7 +11,7 @@ import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ListView
-import android.widget.TextView
+import android.widget.PopupMenu
 import android.widget.Toast
 import java.io.File
 
@@ -25,6 +25,12 @@ import java.io.File
 class ProgramsActivity : Activity() {
 
     companion object {
+        private const val MENU_NAME = 1
+        private const val MENU_UP = 2
+        private const val MENU_IMPORT = 3
+        private const val MENU_NEW = 4
+        private const val MENU_CHOOSE_QPYTHON = 5
+        private const val MENU_HOME = 6
         private const val IMPORT_REQUEST = 1001
         private const val QPYTHON_TREE_REQUEST = 1002
         private const val QPYTHON_PERM_REQUEST = 1003
@@ -36,7 +42,6 @@ class ProgramsActivity : Activity() {
     }
 
     private lateinit var listView: ListView
-    private lateinit var titleText: TextView
     private lateinit var currentDir: File
     private val shown = ArrayList<File>()
 
@@ -56,11 +61,14 @@ class ProgramsActivity : Activity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_programs)
         listView = findViewById(R.id.programs_list)
-        titleText = findViewById(R.id.programs_title)
 
-        findViewById<Button>(R.id.programs_back).setOnClickListener { finish() }
-        findViewById<Button>(R.id.programs_new).setOnClickListener { newFileDialog() }
-        findViewById<Button>(R.id.programs_import).setOnClickListener { importFile() }
+        // v1.0.40: header bar removed — Up/Import/New live in the
+        // floating ⋮ menu now (same pattern as the Console). The
+        // current folder name that the header title showed appears
+        // as a disabled header item inside the menu.
+        findViewById<Button>(R.id.programs_menu_button).setOnClickListener { v ->
+            showMenu(v)
+        }
         findViewById<Button>(R.id.programs_choose_qpython).setOnClickListener {
             // Direct mode: change the folder path. SAF fallback:
             // pick a folder with the system picker.
@@ -70,31 +78,16 @@ class ProgramsActivity : Activity() {
             qpythonMode = !qpythonMode
             if (qpythonMode) {
                 // Home-only actions make no sense for the SAF folder:
-                // hide them, show the folder chooser instead.
-                findViewById<Button>(R.id.programs_up).visibility = View.GONE
-                findViewById<Button>(R.id.programs_import).visibility = View.GONE
-                findViewById<Button>(R.id.programs_new).visibility = View.GONE
+                // the ⋮ menu shows "Choose folder" instead of
+                // Up/Import/New (see showMenu); show the mode strip's
+                // folder chooser instead.
                 findViewById<Button>(R.id.programs_choose_qpython).visibility = View.VISIBLE
                 findViewById<Button>(R.id.programs_qpython).text = getString(R.string.home_files)
                 ensureQpythonPermission()
             } else {
-                findViewById<Button>(R.id.programs_up).visibility = View.VISIBLE
-                findViewById<Button>(R.id.programs_import).visibility = View.VISIBLE
-                findViewById<Button>(R.id.programs_new).visibility = View.VISIBLE
                 findViewById<Button>(R.id.programs_choose_qpython).visibility = View.GONE
                 findViewById<Button>(R.id.programs_qpython).text = getString(R.string.qpython_scripts)
                 showDir(currentDir)
-            }
-        }
-        findViewById<Button>(R.id.programs_up).setOnClickListener {
-            val app = application as DzTerminalApp
-            val home = File(DzTerminalApp.hostHome(app))
-            // Stay rooted at home: never navigate above it.
-            val parent = currentDir.parentFile
-            if (currentDir != home && parent != null &&
-                parent.absolutePath.startsWith(home.absolutePath)
-            ) {
-                showDir(parent)
             }
         }
 
@@ -143,9 +136,58 @@ class ProgramsActivity : Activity() {
         }
     }
 
+    /** v1.0.40: floating ⋮ menu (replaces the removed header bar).
+     *  The current folder name that the header title showed appears
+     *  as a disabled header item. In QPython mode the home-only
+     *  actions (Up/Import/New) are replaced by Choose folder. */
+    private fun showMenu(anchor: View) {
+        val popup = PopupMenu(this, anchor)
+        if (qpythonMode) {
+            popup.menu.add(0, MENU_NAME, 0, getString(R.string.qpython_scripts))
+                .setEnabled(false)
+            popup.menu.add(0, MENU_CHOOSE_QPYTHON, 1,
+                getString(R.string.choose_folder))
+            popup.menu.add(0, MENU_HOME, 2, "Home")
+        } else {
+            popup.menu.add(0, MENU_NAME, 0,
+                currentDir.name.ifEmpty { "Home" }).setEnabled(false)
+            popup.menu.add(0, MENU_UP, 1, "Up")
+            popup.menu.add(0, MENU_IMPORT, 2, "Import")
+            popup.menu.add(0, MENU_NEW, 3, "New")
+            popup.menu.add(0, MENU_HOME, 4, "Home")
+        }
+        popup.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                MENU_UP -> { goUp(); true }
+                MENU_IMPORT -> { importFile(); true }
+                MENU_NEW -> { newFileDialog(); true }
+                MENU_CHOOSE_QPYTHON -> {
+                    if (qpythonDirect) changeQpythonFolderDialog()
+                    else chooseQpythonFolder()
+                    true
+                }
+                MENU_HOME -> { finish(); true }
+                else -> false
+            }
+        }
+        popup.show()
+    }
+
+    /** The old header UP button's logic: go to the parent folder,
+     *  staying rooted at home. */
+    private fun goUp() {
+        val app = application as DzTerminalApp
+        val home = File(DzTerminalApp.hostHome(app))
+        val parent = currentDir.parentFile
+        if (currentDir != home && parent != null &&
+            parent.absolutePath.startsWith(home.absolutePath)
+        ) {
+            showDir(parent)
+        }
+    }
+
     private fun showDir(dir: File) {
         currentDir = dir
-        titleText.text = dir.name.ifEmpty { "Home" }
         val children = dir.listFiles()?.sortedWith(
             compareByDescending<File> { it.isDirectory }.thenBy { it.name.lowercase() }
         ) ?: emptyList()
@@ -171,7 +213,6 @@ class ProgramsActivity : Activity() {
 
     /** Dispatch: direct folder when permitted, SAF tree otherwise. */
     private fun showQpython() {
-        titleText.text = getString(R.string.qpython_scripts)
         if (checkSelfPermission(android.Manifest.permission.READ_EXTERNAL_STORAGE) ==
             android.content.pm.PackageManager.PERMISSION_GRANTED
         ) {
@@ -225,7 +266,6 @@ class ProgramsActivity : Activity() {
         qpythonDirect = true
         qpythonFiles.clear()
         qpythonEmptyMessage = null
-        titleText.text = getString(R.string.qpython_scripts)
         val dir = qpythonDir()
         if (!dir.isDirectory || !dir.canRead()) {
             showQpythonEmpty(getString(R.string.qpython_folder_not_found) + ": " + dir.absolutePath)
@@ -315,7 +355,6 @@ class ProgramsActivity : Activity() {
      *  the tree URI + persistable permission survive restarts. */
     private fun showQpythonSaf() {
         qpythonDirect = false
-        titleText.text = getString(R.string.qpython_scripts)
         qpythonDocs.clear()
         qpythonEmptyMessage = null
         val uriString = getSharedPreferences(PREFS, MODE_PRIVATE)

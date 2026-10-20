@@ -13,9 +13,11 @@ import android.util.TypedValue
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
+import android.view.ViewTreeObserver
 import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.LinearLayout
+import android.widget.PopupMenu
 import android.widget.TextView
 import android.widget.Toast
 import com.termux.terminal.TerminalEmulator
@@ -35,6 +37,7 @@ class ConsoleActivity : Activity() {
 
     private lateinit var terminalView: TerminalView
     private lateinit var statusText: TextView
+    private lateinit var tabBar: LinearLayout
     private lateinit var tabBarContainer: LinearLayout
     private lateinit var tabBarScroll: android.widget.HorizontalScrollView
     private val mainHandler = Handler(Looper.getMainLooper())
@@ -102,12 +105,12 @@ class ConsoleActivity : Activity() {
                     DebugInfo.onSessionFinished(finishedSession.exitStatus, tail)
                 } catch (_: Exception) {
                 }
-                // Only the current tab shows the "ended" banner; a
-                // background tab ending stays silent until viewed.
-                if (finishedSession === currentSession()) {
-                    statusText.visibility = View.VISIBLE
-                    statusText.text = "Session ended. Tap Restart (or press Enter) for a new shell."
-                }
+                // v1.0.38: auto-leave — a finished session (`exit` /
+                // Ctrl+D) never leaves a stuck "[Process completed -
+                // press Enter]" tab behind. The finished tab is
+                // closed; when it was the last tab the Console
+                // finishes and the user lands back on Home.
+                autoCloseFinishedSession(finishedSession)
                 // v1.0.26: a finished session may be the LAST live
                 // one — tell the keep-alive service to re-check so
                 // it drops the wake lock and stops itself.
@@ -150,6 +153,12 @@ class ConsoleActivity : Activity() {
         override fun onSingleTapUp(e: MotionEvent) {
             terminalView.requestFocus()
             val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+            // v1.0.33: force the IME to re-bind to this view's input
+            // connection. A stale connection (activity resume /
+            // tab switch / session re-attach) makes the keyboard
+            // open but sends keystrokes nowhere — the exact
+            // "keyboard opens, typing dead" symptom.
+            imm.restartInput(terminalView)
             imm.showSoftInput(terminalView, InputMethodManager.SHOW_IMPLICIT)
         }
 
@@ -212,24 +221,53 @@ class ConsoleActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // v1.0.35: force the window + content backgrounds to opaque
+        // black in CODE (not just XML). The v1.0.32–34 screenshots
+        // showed STEEL in the terminal area even though the layout
+        // already declared black — if steel ever shows again after
+        // this, it is a foreign overlay, not our layout.
+        window.setBackgroundDrawable(
+            android.graphics.drawable.ColorDrawable(android.graphics.Color.BLACK)
+        )
         setContentView(R.layout.activity_console)
+        findViewById<View>(android.R.id.content)
+            .setBackgroundColor(android.graphics.Color.BLACK)
         terminalView = findViewById(R.id.terminal_view)
         statusText = findViewById(R.id.console_status)
+        tabBar = findViewById(R.id.tab_bar)
         tabBarContainer = findViewById(R.id.tab_bar_container)
         tabBarScroll = findViewById(R.id.tab_bar_scroll)
-        findViewById<Button>(R.id.console_back).setOnClickListener { finish() }
-        findViewById<Button>(R.id.console_restart).setOnClickListener { restartSession() }
+        // v1.0.39: the top header bar (BACK/Console/RESTART) is gone
+        // (Termux-clean look). Its functions live in the floating ⋮
+        // menu button (top-right, over the terminal): New tab /
+        // Restart session / Settings / Home.
+        findViewById<Button>(R.id.console_menu_button).setOnClickListener { v ->
+            showConsoleMenu(v)
+        }
         findViewById<Button>(R.id.tab_add).setOnClickListener { addSession() }
         val rippleValue = TypedValue()
         theme.resolveAttribute(android.R.attr.selectableItemBackground, rippleValue, true)
         rippleBgRes = rippleValue.resourceId
         buildExtraKeys()
+        installKeyboardLayoutWatcher()
 
         val textSizePx = TypedValue.applyDimension(
             TypedValue.COMPLEX_UNIT_SP, 15f, resources.displayMetrics
         ).toInt()
         terminalView.setTextSize(textSizePx)
         terminalView.setTerminalViewClient(viewClient)
+        // v1.0.33: belt & braces — the TerminalView is the ONLY
+        // focusable view in Console (header/tab/extra-key buttons
+        // are all focusable=false), so focus can never get stuck
+        // on a button and starve the terminal of input.
+        terminalView.isFocusable = true
+        terminalView.isFocusableInTouchMode = true
+        // v1.0.34: opaque black in CODE as well as in layout. The
+        // terminal area must be black + prompt — if a future layout
+        // edit ever drops the background attr, the view still
+        // paints black instead of showing whatever is behind it
+        // (which read as "steel, no prompt" on v1.0.32/33).
+        terminalView.setBackgroundColor(android.graphics.Color.BLACK)
 
         // v1.0.27: shared-storage permission gate. The guest
         // shell reaches /sdcard + /storage/emulated/0 only when
@@ -362,6 +400,65 @@ class ConsoleActivity : Activity() {
             SessionService.sync(this)
         }
         terminalView.requestFocus()
+        // v1.0.33: re-bind the IME to the current input
+        // connection on every resume (see onSingleTapUp).
+        (getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
+            .restartInput(terminalView)
+        // v1.0.35: re-record geometry on every resume (keyboard
+        // open/close re-measures the terminal area).
+        recordTerminalViewGeometry()
+    }
+
+    // ---- Floating menu (v1.0.39) ----
+    //
+    // The removed header bar's functions, in the small ⋮ button
+    // floating top-right over the terminal: New tab / Restart
+    // session / Home. ("New tab" is also the only way
+    // to add a tab while the tab bar is auto-hidden at 1 tab.)
+    // v1.0.41: the "Settings" entry was removed (its screen only
+    // held Debug + About; About lives in the Home gear menu).
+
+    private fun showConsoleMenu(anchor: View) {
+        val popup = PopupMenu(this, anchor)
+        popup.menu.add(0, MENU_NEW_TAB, 0, "New tab")
+        popup.menu.add(0, MENU_RESTART, 1, "Restart session")
+        popup.menu.add(0, MENU_HOME, 2, "Home")
+        popup.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                MENU_NEW_TAB -> { addSession(); true }
+                MENU_RESTART -> { restartSession(); true }
+                MENU_HOME -> { finish(); true }
+                else -> false
+            }
+        }
+        popup.show()
+    }
+
+    // ---- System BACK (v1.0.39) ----
+    //
+    // Replaces the removed header BACK button. Keyboard open ->
+    // close the keyboard (standard Android behavior); keyboard
+    // closed -> finish() = back to Home (same as the old BACK).
+    // (TerminalViewClient.shouldBackButtonBeMappedToEscape() is
+    // false, so BACK is free for navigation.)
+
+    override fun onBackPressed() {
+        if (isKeyboardOpen()) {
+            (getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
+                .hideSoftInputFromWindow(terminalView.windowToken, 0)
+        } else {
+            super.onBackPressed()
+        }
+    }
+
+    /** True when the soft keyboard is currently shrinking the window
+     *  (adjustResize). Tracks the tallest window seen; a window more
+     *  than 120dp shorter than that means the keyboard is open. */
+    private var maxConsoleRootHeight = 0
+
+    private fun isKeyboardOpen(): Boolean {
+        val root = findViewById<View>(R.id.console_root) ?: return false
+        return maxConsoleRootHeight - root.height > dpToPx(120)
     }
 
     // ---- Extra-keys bar (v1.0.10, Termux-style) ----
@@ -693,7 +790,117 @@ class ConsoleActivity : Activity() {
         // onResume) — attach itself does not swallow them, so the
         // failure is recorded in Debug instead of vanishing.
         terminalView.attachSession(session)
+        // v1.0.34: force the emulator + a redraw right now. If
+        // attach happened before layout (view size 0), updateSize
+        // inside attachSession no-ops and the view-side emulator
+        // stays null — onSizeChanged normally recovers this, but
+        // an explicit updateSize + invalidate here makes the
+        // prompt appear on the first layout pass, not "eventually".
+        terminalView.updateSize()
+        terminalView.invalidate()
+        recordTerminalViewGeometry()
         statusText.visibility = View.GONE
+        // v1.0.33: a re-attached session needs focus AND a fresh
+        // IME binding, or the keyboard opens but typing goes
+        // nowhere (stale input connection).
+        terminalView.post {
+            terminalView.requestFocus()
+            (getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
+                .restartInput(terminalView)
+        }
+    }
+
+    /**
+     * v1.0.36: record the TerminalView's REAL measured geometry
+     * (after layout) into DebugInfo, so the Debug screen proves
+     * whether the view actually occupies the terminal area.
+     * Called after attach + on every resume + on every root
+     * layout (keyboard open/close re-measures the terminal area).
+     * A 0-height or INVISIBLE/GONE view here explains a
+     * steel/blank terminal area regardless of what the layout
+     * XML declares. Includes a timestamp + the currently focused
+     * view so a stale snapshot is recognizable, and the IME
+     * section below shows whether the keyboard can reach the
+     * editor at all.
+     */
+    private fun recordTerminalViewGeometry() {
+        terminalView.post {
+            val vis = when (terminalView.visibility) {
+                View.VISIBLE -> "VISIBLE"
+                View.INVISIBLE -> "INVISIBLE"
+                else -> "GONE"
+            }
+            val focused = currentFocus?.let { it.javaClass.simpleName + "#" +
+                (try { resources.getResourceEntryName(it.id) } catch (_: Throwable) { "noid" }) } ?: "none"
+            val now = java.text.SimpleDateFormat("HH:mm:ss", java.util.Locale.US)
+                .format(java.util.Date())
+            DebugInfo.lastTerminalViewGeometry =
+                "[$now] w=${terminalView.width} h=${terminalView.height} " +
+                "visibility=$vis attached=${terminalView.isAttachedToWindow} " +
+                "bg=${terminalView.background != null} " +
+                "containerW=${findViewById<View>(R.id.terminal_container)?.width} " +
+                "containerH=${findViewById<View>(R.id.terminal_container)?.height} " +
+                "rootH=${findViewById<View>(R.id.console_root)?.height} " +
+                "focused=$focused"
+            terminalView.invalidate()
+        }
+    }
+
+    // v1.0.36: keyboard open/close re-measures the window
+    // (adjustResize). Two jobs on every root layout:
+    // (1) zero-height watchdog — if the terminal container ever
+    // measures 0 while the window is taller than the fixed chrome
+    // (header + tab bar + extra-keys), force a re-layout and note
+    // it in Debug (this was the v1.0.35 "steel, no prompt, IME
+    // binds but delivers nothing" state);
+    // (2) IME re-bind — when the usable height changes (keyboard
+    // opened/closed), the TerminalView's size changed, so re-bind
+    // the IME to the resized view (debounced): focus + restartInput
+    // AFTER the resize settles, otherwise Gboard keeps talking to
+    // the pre-resize input connection and keystrokes go nowhere.
+    private var lastConsoleRootHeight = 0
+    private var imeRebindPending = false
+
+    private fun installKeyboardLayoutWatcher() {
+        val root = findViewById<View>(R.id.console_root) ?: return
+        root.viewTreeObserver.addOnGlobalLayoutListener(
+            object : ViewTreeObserver.OnGlobalLayoutListener {
+                override fun onGlobalLayout() {
+                    val rootH = root.height
+                    if (rootH == lastConsoleRootHeight) return
+                    val wasKeyboardState = lastConsoleRootHeight != 0
+                    lastConsoleRootHeight = rootH
+                    // v1.0.39: track the tallest window seen so
+                    // isKeyboardOpen() can tell keyboard-open
+                    // (BACK closes it) from keyboard-closed
+                    // (BACK goes Home).
+                    if (rootH > maxConsoleRootHeight) maxConsoleRootHeight = rootH
+                    recordTerminalViewGeometry()
+                    val container = findViewById<View>(R.id.terminal_container)
+                    if (container != null && container.height == 0 && rootH > 0) {
+                        // Zero-height watchdog: the container must
+                        // never be 0 in a non-trivial window. Note
+                        // it and force another layout pass.
+                        DebugInfo.lastTerminalViewGeometry =
+                            DebugInfo.lastTerminalViewGeometry +
+                            " ZERO-HEIGHT-WATCHDOG-FIRED"
+                        container.requestLayout()
+                    }
+                    if (wasKeyboardState && !imeRebindPending) {
+                        imeRebindPending = true
+                        mainHandler.postDelayed({
+                            imeRebindPending = false
+                            if (!isFinishing && !isDestroyed) {
+                                terminalView.requestFocus()
+                                (getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
+                                    .restartInput(terminalView)
+                                recordTerminalViewGeometry()
+                            }
+                        }, 250)
+                    }
+                }
+            }
+        )
     }
 
     private fun restartSession() {
@@ -787,6 +994,65 @@ class ConsoleActivity : Activity() {
         // v1.0.26: closing a tab may leave zero live sessions.
         SessionService.sync(this)
         terminalView.requestFocus()
+        // v1.0.33: re-bind the IME (see onSingleTapUp).
+        (getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
+            .restartInput(terminalView)
+    }
+
+    /**
+     * v1.0.38: auto-leave on session end (`exit` / Ctrl+D). The
+     * finished tab is closed automatically — the user never sits
+     * on a dead "[Process completed - press Enter]" screen. If
+     * other tabs with live sessions exist, a neighbour tab takes
+     * over; if the finished tab was the last one, the Console
+     * finishes and the user lands back on Home. One short toast
+     * so an unexpected session death is not a silent bounce.
+     * (The app only ever sees "session ended" — `exit` and
+     * Ctrl+D both arrive here, no key detection needed.)
+     */
+    private fun autoCloseFinishedSession(finishedSession: TerminalSession) {
+        val app = application as DzTerminalApp
+        val index = app.sessions.indexOf(finishedSession)
+        // Not in the list (e.g. the user already restarted this
+        // tab in the gap between death and this callback): nothing
+        // to close.
+        if (index < 0) return
+        Toast.makeText(this, "Session ended", Toast.LENGTH_SHORT).show()
+        if (app.sessions.size == 1) {
+            // Last tab: drop it and leave the Console -> Home.
+            // Re-entering Console starts a fresh session (onCreate).
+            app.sessions.removeAt(index)
+            app.currentSessionIndex = 0
+            finish()
+            return
+        }
+        // More tabs remain: drop the finished one and attach to a
+        // live neighbour (next tab, or the previous one when the
+        // last tab was closed).
+        if (index < app.currentSessionIndex) {
+            app.currentSessionIndex--
+        } else if (index == app.currentSessionIndex) {
+            if (app.currentSessionIndex >= app.sessions.size - 1) {
+                app.currentSessionIndex = app.sessions.size - 2
+            }
+        }
+        app.sessions.removeAt(index)
+        val current = app.session
+        if (current != null) {
+            try {
+                attach(current)
+            } catch (t: Throwable) {
+                DebugInfo.lastSessionError =
+                    "auto-close attach failed: ${t.javaClass.simpleName}: ${t.message}"
+            }
+        }
+        updateStatusForCurrent()
+        rebuildTabs()
+        refreshForegroundFlags()
+        terminalView.requestFocus()
+        // v1.0.33: re-bind the IME (see onSingleTapUp).
+        (getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)
+            .restartInput(terminalView)
     }
 
     /** Shows the "Session ended" banner iff the current tab is dead. */
@@ -805,10 +1071,17 @@ class ConsoleActivity : Activity() {
         val app = application as DzTerminalApp
         tabBarContainer.removeAllViews()
         val count = app.sessions.size
+        // v1.0.39: Termux-clean look — the tab bar AUTO-HIDES when
+        // <= 1 session exists and appears when a 2nd tab is opened.
+        // The terminal container is anchored below the tab bar, so
+        // when the bar is GONE the terminal extends to the very top
+        // (RelativeLayout ignores layout_below on a GONE view).
+        // "New tab" stays reachable via the floating ⋮ menu while
+        // the bar is hidden.
+        tabBar.visibility = if (count > 1) View.VISIBLE else View.GONE
         if (count == 0) {
-            // No session yet (first start still running): show a
-            // placeholder "1" so the bar is never empty.
-            tabBarContainer.addView(makeTabView(0, selected = true, closeVisible = false))
+            // No session yet (first start still running): nothing
+            // to show — the bar is hidden anyway.
             return
         }
         for (i in 0 until count) {
@@ -931,6 +1204,10 @@ class ConsoleActivity : Activity() {
         private const val PREFS = "dz_terminal_prefs"
         private const val KEY_STORAGE_PERM_ASKED = "storage_perm_asked_v1027"
         private const val STORAGE_PERM_REQUEST = 1004
+        /** Floating-menu item ids (v1.0.39). */
+        private const val MENU_NEW_TAB = 1
+        private const val MENU_RESTART = 2
+        private const val MENU_HOME = 3
         /** Opens the Console and runs a shell command once the shell is ready. */
         fun openWithCommand(context: Context, command: String) {
             DzTerminalApp.pendingConsoleCommand = command

@@ -299,6 +299,9 @@ public final class TerminalView extends View {
 
     @Override
     public InputConnection onCreateInputConnection(EditorInfo outAttrs) {
+        // v1.0.34: Debug input counters — prove the IME actually bound
+        // to this view (a missing binding = zero commitText calls).
+        if (mTermSession != null) mTermSession.inputConnectionCreations++;
         // Ensure that inputType is only set if TerminalView is selected view with the keyboard and
         // an alternate view is not selected, like an EditText. This is necessary if an activity is
         // initially started with the alternate view or if activity is returned to from another app
@@ -378,7 +381,11 @@ public final class TerminalView extends View {
 
             /** Replace the sent composing span with the full new text. */
             void replaceComposingText(String newText) {
-                if (mEmulator == null) return;
+                // v1.0.34: no mEmulator gate here — sendTextToTerminal /
+                // inputCodePoint only need a live session (they guard
+                // mTermSession themselves). Gating on the view-side
+                // emulator silently dropped composing text whenever
+                // the emulator was not set yet.
                 eraseSentComposingText();
                 if (!newText.isEmpty()) {
                     sendTextToTerminal(newText);
@@ -393,7 +400,14 @@ public final class TerminalView extends View {
                 // unseen in the Editable (that was the v1.0.11 bug —
                 // nothing echoed until the IME committed it). Send
                 // the full replacement immediately instead.
-                if (mEmulator == null) return true;
+                // v1.0.34: count it + retry the emulator once instead
+                // of silently dropping when the view-side emulator is
+                // null (see commitText).
+                if (mTermSession != null) mTermSession.inputSetComposingCalls++;
+                if (mEmulator == null) {
+                    updateSize();
+                    if (mEmulator == null && (mTermSession == null || !mTermSession.isRunning())) return true;
+                }
                 replaceComposingText(text == null ? "" : text.toString());
                 return true;
             }
@@ -427,7 +441,28 @@ public final class TerminalView extends View {
                 }
                 super.commitText(text, newCursorPosition);
 
-                if (mEmulator == null) return true;
+                // v1.0.34: count + last text (Debug proof typing arrived).
+                if (mTermSession != null) {
+                    mTermSession.inputCommitTextCalls++;
+                    if (text != null && text.length() > 0) {
+                        String t = text.toString();
+                        mTermSession.lastInputText = t.length() > 24 ? t.substring(0, 24) : t;
+                    }
+                }
+                // v1.0.34: NEVER silently drop committed text when the
+                // view-side emulator is null. The emulator is a VIEW
+                // concern (rendering); the SESSION is what receives
+                // input, and it does not need the view's emulator.
+                // Retry updateSize() once (attach may have happened
+                // before layout), then forward anyway whenever the
+                // session is alive. The old `if (mEmulator == null)
+                // return true;` ate every keystroke with no trace in
+                // exactly that state — the prime suspect for the
+                // v1.0.32/33 "typing goes nowhere" report.
+                if (mEmulator == null) {
+                    updateSize();
+                    if (mEmulator == null && (mTermSession == null || !mTermSession.isRunning())) return true;
+                }
 
                 // The committed text REPLACES the composing span:
                 // erase the sent span, send the committed text once,
@@ -451,6 +486,8 @@ public final class TerminalView extends View {
                 if (TERMINAL_VIEW_KEY_LOGGING_ENABLED) {
                     mClient.logInfo(LOG_TAG, "IME: deleteSurroundingText(" + leftLength + ", " + rightLength + ")");
                 }
+                // v1.0.34: Debug input counter.
+                if (mTermSession != null) mTermSession.inputDeleteSurroundingCalls++;
                 // The stock Samsung keyboard with 'Auto check spelling' enabled sends leftLength > 1.
                 KeyEvent deleteKey = new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_DEL);
                 for (int i = 0; i < leftLength; i++) sendKeyEvent(deleteKey);
@@ -687,14 +724,22 @@ public final class TerminalView extends View {
     @Override
     @TargetApi(23)
     public boolean onTouchEvent(MotionEvent event) {
-        if (mEmulator == null) return true;
+        if (mEmulator == null) {
+            // v1.0.34: same no-silent-drop rule — a tap must still
+            // reach the gesture recognizer (focus + keyboard) when
+            // the session is alive even if the view emulator is not
+            // set yet. Without this, a null emulator also swallows
+            // taps, so the user cannot even focus / open the IME.
+            updateSize();
+            if (mEmulator == null && (mTermSession == null || !mTermSession.isRunning())) return true;
+        }
         final int action = event.getAction();
 
         if (isSelectingText()) {
             updateFloatingToolbarVisibility(event);
             mGestureRecognizer.onTouchEvent(event);
             return true;
-        } else if (event.isFromSource(InputDevice.SOURCE_MOUSE)) {
+        } else if (mEmulator != null && event.isFromSource(InputDevice.SOURCE_MOUSE)) {
             if (event.isButtonPressed(MotionEvent.BUTTON_SECONDARY)) {
                 if (action == MotionEvent.ACTION_DOWN) showContextMenu();
                 return true;
@@ -852,7 +897,13 @@ public final class TerminalView extends View {
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (TERMINAL_VIEW_KEY_LOGGING_ENABLED)
             mClient.logInfo(LOG_TAG, "onKeyDown(keyCode=" + keyCode + ", isSystem()=" + event.isSystem() + ", event=" + event + ")");
-        if (mEmulator == null) return true;
+        // v1.0.34: count + same no-silent-drop rule as commitText
+        // (hardware keys: Enter / DEL / arrows).
+        if (mTermSession != null) mTermSession.inputKeyEventCalls++;
+        if (mEmulator == null) {
+            updateSize();
+            if (mEmulator == null && (mTermSession == null || !mTermSession.isRunning())) return true;
+        }
         if (isSelectingText()) {
             stopTextSelectionMode();
         }
@@ -1024,6 +1075,9 @@ public final class TerminalView extends View {
                 // shift+page_up and shift+page_down should scroll scrollback history instead of
                 // scrolling command history or changing pages
                 if (shiftDown) {
+                    // v1.0.34: mEmulator may be null when input is
+                    // forwarded without a view emulator — never NPE.
+                    if (mEmulator == null) return false;
                     long time = SystemClock.uptimeMillis();
                     MotionEvent motionEvent = MotionEvent.obtain(time, time, MotionEvent.ACTION_DOWN, 0, 0, 0);
                     doScroll(motionEvent, keyCode == KeyEvent.KEYCODE_PAGE_UP ? -mEmulator.mRows : mEmulator.mRows);
@@ -1049,7 +1103,12 @@ public final class TerminalView extends View {
 
         // Do not return for KEYCODE_BACK and send it to the client since user may be trying
         // to exit the activity.
-        if (mEmulator == null && keyCode != KeyEvent.KEYCODE_BACK) return true;
+        // v1.0.34: same no-silent-drop rule as onKeyDown — retry the
+        // emulator once, then forward when the session is alive.
+        if (mEmulator == null && keyCode != KeyEvent.KEYCODE_BACK) {
+            updateSize();
+            if (mEmulator == null && (mTermSession == null || !mTermSession.isRunning())) return true;
+        }
 
         if (mClient.onKeyUp(keyCode, event)) {
             invalidate();

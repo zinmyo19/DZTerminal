@@ -7,7 +7,6 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
-import android.widget.Button
 import android.widget.ImageView
 import android.widget.PopupMenu
 import android.widget.Toast
@@ -31,18 +30,20 @@ class MainActivity : Activity() {
         findViewById<ImageView>(R.id.home_terminal_button).setOnClickListener {
             startActivity(Intent(this, ConsoleActivity::class.java))
         }
-        findViewById<Button>(R.id.home_menu).setOnClickListener { view ->
+        // v1.0.41: the header 3-dot is gone — the gear icon centered
+        // below the bottom shields opens the menu (About / Export /
+        // Import). The redundant "Settings" entry was removed; About
+        // opens its dialog directly from here.
+        findViewById<View>(R.id.home_gear).setOnClickListener { view ->
             val popup = PopupMenu(this, view)
-            popup.menu.add("Settings")
             popup.menu.add("About")
             // v1.0.28: Export / Import home files <-> shared
             // storage (file-manager visibility). Lives in the
-            // Home 3-dot menu — the most discoverable spot.
+            // Home menu — the most discoverable spot.
             popup.menu.add("Export to file manager")
             popup.menu.add("Import from file manager")
             popup.setOnMenuItemClickListener { item ->
                 when (item.title.toString()) {
-                    "Settings" -> startActivity(Intent(this, SettingsActivity::class.java))
                     "About" -> showAbout()
                     "Export to file manager" -> runFileAction("export")
                     "Import from file manager" -> runFileAction("import")

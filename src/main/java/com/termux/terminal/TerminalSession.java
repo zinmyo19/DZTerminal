@@ -86,6 +86,24 @@ public final class TerminalSession extends TerminalOutput {
     /** v1.0.23: wall-clock ms of the last byte the app wrote TO the guest (typing / paste / extra keys). */
     private volatile long mLastInputWriteTimeMs = 0L;
 
+    /**
+     * v1.0.34: per-session input-path counters — Debug proof of where
+     * typing goes. Incremented by TerminalView's InputConnection /
+     * key-event paths (on the attached session) and by write().
+     * If commitText counts climb but inputBytesWritten stays 0, the
+     * break is between the IME and session.write; if commitText
+     * itself stays 0, the IME never delivered to the view.
+     */
+    public volatile int inputCommitTextCalls;
+    public volatile int inputSetComposingCalls;
+    public volatile int inputDeleteSurroundingCalls;
+    public volatile int inputSendKeyEventCalls;
+    public volatile int inputKeyEventCalls;
+    public volatile int inputConnectionCreations;
+    public volatile long inputBytesWritten;
+    /** Last committed text (truncated to 24 chars) — proof typing arrived. */
+    public volatile String lastInputText = "";
+
     /** v1.0.23: set by ConsoleActivity whenever the attached tab changes. */
     public void setForeground(boolean foreground) {
         mIsForeground = foreground;
@@ -288,6 +306,8 @@ public final class TerminalSession extends TerminalOutput {
             // typing echo can lag while input itself is instant, and
             // this timestamp separates the two (lastInput in Debug).
             mLastInputWriteTimeMs = System.currentTimeMillis();
+            // v1.0.34: total bytes written to the PTY (Debug counter).
+            inputBytesWritten += count;
             mTerminalToProcessIOQueue.write(data, offset, count);
         }
     }

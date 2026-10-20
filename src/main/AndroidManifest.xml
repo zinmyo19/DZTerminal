@@ -70,14 +70,6 @@
             android:name=".CommunityActivity"
             android:exported="false" />
 
-        <activity
-            android:name=".SettingsActivity"
-            android:exported="false" />
-
-        <activity
-            android:name=".DebugActivity"
-            android:exported="false" />
-
         <!-- v1.0.26: owns session lifetime in the background:
              foreground notification + partial wake lock while >= 1
              session runs. Not exported; no FGS type (targetSdk 28). -->

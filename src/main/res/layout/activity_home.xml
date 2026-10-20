@@ -1,60 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- v1.0.32: compact fixed-size shield Home — fits ONE screen, NO scroll.
-     FIX (v1.0.31 bugs): v1.0.31 used a ScrollView + oversized fixed
-     sizes (220x260dp button, 170dp cards, 20dp paddings) totalling
-     ~782dp on a ~760dp-usable screen (POCO F5 Pro 1080x2400,
-     360x800dp), so the bottom row was clipped and the screen
-     scrolled. This layout uses FIXED COMPACT dp sizes totalling
-     ~695dp: header ~75 + content padding 20 + button 228 +
-     card rows 372 = 695dp <= 760dp usable. No ScrollView, so
-     scrolling is impossible. Card size 150x180dp matches the
-     shield vector aspect (100:120) so the shield is not distorted.
-     Background: @drawable/steel_bg (seamless mirrored tile). -->
+<!-- v1.0.36: tightened further (user: push up again).
+     v1.0.35: tighten-up — everything moves UP, gear fully visible.
+     v1.0.34's gear was half-clipped at the bottom edge and the
+     banner sat too low. Tightened: header padding 10 -> 4dp,
+     banner plate padding 8 -> 6dp, banner text 22 -> 20sp,
+     content top padding 6 -> 0dp, content bottom 6 -> 10dp,
+     shield margins 4/8 -> 0/4dp, card row gaps 10 -> 6dp,
+     gear row marginTop 2 -> 6dp + marginBottom 10dp (the gear
+     never sits flush with the screen edge again).
+     Shield stays 200x236, cards stay 140x168. Total ~710dp. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="@drawable/steel_bg">
 
-    <!-- Brushed-steel header -->
-    <RelativeLayout
+    <!-- Banner header: centered framed title, no 3-dot menu -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center"
         android:background="@drawable/steel_header"
-        android:padding="14dp">
+        android:padding="2dp">
 
-        <LinearLayout
+        <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:layout_alignParentStart="true">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/app_name"
-                android:textSize="26sp"
-                android:textStyle="bold"
-                android:textColor="@color/dz_white" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/home_subtitle"
-                android:textSize="14sp"
-                android:textColor="@color/dz_muted" />
-        </LinearLayout>
-
-        <Button
-            android:id="@+id/home_menu"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_alignParentEnd="true"
-            android:text="@string/menu"
-            android:textSize="24sp"
-            android:textColor="@color/dz_muted"
-            android:background="@android:color/transparent" />
-    </RelativeLayout>
+            android:background="@drawable/banner_plate"
+            android:paddingStart="18dp"
+            android:paddingEnd="18dp"
+            android:paddingTop="4dp"
+            android:paddingBottom="4dp"
+            android:text="@string/app_name"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="@color/dz_white" />
+    </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -62,21 +44,21 @@
         android:orientation="vertical"
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
-        android:paddingTop="12dp"
-        android:paddingBottom="8dp">
+        android:paddingTop="0dp"
+        android:paddingBottom="6dp">
 
-        <!-- Big center shield logo button: FIXED 180x212dp -->
+        <!-- Big center shield logo button: FIXED 200x236dp -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center"
-            android:layout_marginTop="6dp"
-            android:layout_marginBottom="10dp">
+            android:layout_marginTop="0dp"
+            android:layout_marginBottom="2dp">
 
             <ImageView
                 android:id="@+id/home_terminal_button"
-                android:layout_width="180dp"
-                android:layout_height="212dp"
+                android:layout_width="200dp"
+                android:layout_height="236dp"
                 android:src="@drawable/home_shield"
                 android:scaleType="fitCenter"
                 android:clickable="true"
@@ -85,18 +67,18 @@
                 android:contentDescription="@string/card_console" />
         </LinearLayout>
 
-        <!-- Shield card row 1: FIXED 150x180dp cards, 16dp gap -->
+        <!-- Shield card row 1: FIXED 140x168dp cards, 16dp gap -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center"
-            android:layout_marginBottom="12dp">
+            android:layout_marginBottom="4dp">
 
             <LinearLayout
                 android:id="@+id/card_console"
-                android:layout_width="150dp"
-                android:layout_height="180dp"
+                android:layout_width="140dp"
+                android:layout_height="168dp"
                 android:orientation="vertical"
                 android:gravity="center"
                 android:clickable="true"
@@ -114,7 +96,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginTop="6dp"
                     android:text="@string/card_console"
                     android:textSize="16sp"
                     android:textColor="@color/dz_white" />
@@ -122,8 +104,8 @@
 
             <LinearLayout
                 android:id="@+id/card_editor"
-                android:layout_width="150dp"
-                android:layout_height="180dp"
+                android:layout_width="140dp"
+                android:layout_height="168dp"
                 android:layout_marginStart="16dp"
                 android:orientation="vertical"
                 android:gravity="center"
@@ -141,24 +123,25 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginTop="6dp"
                     android:text="@string/card_editor"
                     android:textSize="16sp"
                     android:textColor="@color/dz_white" />
             </LinearLayout>
         </LinearLayout>
 
-        <!-- Shield card row 2: FIXED 150x180dp cards, 16dp gap -->
+        <!-- Shield card row 2: FIXED 140x168dp cards, 16dp gap -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:gravity="center">
+            android:gravity="center"
+            android:layout_marginBottom="4dp">
 
             <LinearLayout
                 android:id="@+id/card_programs"
-                android:layout_width="150dp"
-                android:layout_height="180dp"
+                android:layout_width="140dp"
+                android:layout_height="168dp"
                 android:orientation="vertical"
                 android:gravity="center"
                 android:clickable="true"
@@ -176,7 +159,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginTop="6dp"
                     android:text="@string/card_programs"
                     android:textSize="16sp"
                     android:textColor="@color/dz_white" />
@@ -184,8 +167,8 @@
 
             <LinearLayout
                 android:id="@+id/card_qpypi"
-                android:layout_width="150dp"
-                android:layout_height="180dp"
+                android:layout_width="140dp"
+                android:layout_height="168dp"
                 android:layout_marginStart="16dp"
                 android:orientation="vertical"
                 android:gravity="center"
@@ -203,11 +186,34 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginTop="6dp"
                     android:text="@string/card_qpypi"
                     android:textSize="16sp"
                     android:textColor="@color/dz_white" />
             </LinearLayout>
+        </LinearLayout>
+
+        <!-- Gear menu button: CENTERED below the bottom shields.
+             Opens the same menu the 3-dot had. -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="6dp">
+
+            <TextView
+                android:id="@+id/home_gear"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@drawable/gear_button_bg"
+                android:gravity="center"
+                android:text="&#x2699;&#xFE0E;"
+                android:textSize="26sp"
+                android:textColor="@color/dz_green"
+                android:clickable="true"
+                android:focusable="true"
+                android:contentDescription="Menu" />
         </LinearLayout>
     </LinearLayout>
 </LinearLayout>

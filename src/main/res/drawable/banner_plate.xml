@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- v1.0.34: framed banner plate for the "DZ Terminal" title —
+     dark steel fill + green border, matching the shield theme. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#141E29" />
+    <stroke
+        android:width="2dp"
+        android:color="@color/dz_green" />
+    <corners android:radius="10dp" />
+</shape>

@@ -1,9 +1,13 @@
 package com.zynelabs.dzterminal
 
 import android.app.Activity
+import android.content.Context
 import android.os.Bundle
+import android.view.View
+import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.EditText
+import android.widget.PopupMenu
 import android.widget.ScrollView
 import android.widget.TextView
 import java.io.File
@@ -37,19 +41,57 @@ class QpypiActivity : Activity() {
         outputText = findViewById(R.id.qpypi_output)
         scrollView = findViewById(R.id.qpypi_scroll)
 
-        findViewById<Button>(R.id.qpypi_back).setOnClickListener { finish() }
-        findViewById<Button>(R.id.qpypi_install).setOnClickListener {
-            val name = input.text.toString().trim()
-            if (name.isEmpty()) {
-                appendLine("Enter a package name first.")
-                return@setOnClickListener
-            }
-            if (!name.matches(Regex("[A-Za-z0-9_][A-Za-z0-9_.\\-+]*"))) {
-                appendLine("Invalid package name: $name")
-                return@setOnClickListener
-            }
-            install(name)
+        // v1.0.40: header bar removed — Install lives in the floating
+        // ⋮ menu now (same pattern as the Console).
+        findViewById<Button>(R.id.qpypi_menu_button).setOnClickListener { v ->
+            showMenu(v, input)
         }
+    }
+
+    /** v1.0.40: floating ⋮ menu — Install + Home. */
+    private fun showMenu(anchor: View, input: EditText) {
+        val popup = PopupMenu(this, anchor)
+        popup.menu.add(0, MENU_INSTALL, 0, "Install")
+        popup.menu.add(0, MENU_HOME, 1, "Home")
+        popup.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                MENU_INSTALL -> { installFromInput(input); true }
+                MENU_HOME -> { finish(); true }
+                else -> false
+            }
+        }
+        popup.show()
+    }
+
+    private fun installFromInput(input: EditText) {
+        val name = input.text.toString().trim()
+        if (name.isEmpty()) {
+            appendLine("Enter a package name first.")
+            return
+        }
+        if (!name.matches(Regex("[A-Za-z0-9_][A-Za-z0-9_.\\-+]*"))) {
+            appendLine("Invalid package name: $name")
+            return
+        }
+        install(name)
+    }
+
+    /** v1.0.40: system BACK replaces the removed header BACK —
+     *  keyboard open -> close it first; closed -> Home. */
+    override fun onBackPressed() {
+        val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        val focus = currentFocus
+        if (focus != null && imm.isActive(focus)) {
+            imm.hideSoftInputFromWindow(focus.windowToken, 0)
+            focus.clearFocus()
+        } else {
+            super.onBackPressed()
+        }
+    }
+
+    companion object {
+        private const val MENU_INSTALL = 1
+        private const val MENU_HOME = 2
     }
 
     private fun install(name: String) {

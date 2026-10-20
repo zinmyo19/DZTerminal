@@ -207,7 +207,27 @@ object SessionManager {
             "  . \"\$PREFIX/etc/profile\"\n" +
             "elif [ -f \"\$HOME/.bashrc\" ]; then\n" +
             "  . \"\$HOME/.bashrc\"\n" +
-            "fi\n"
+            "fi\n" +
+            "# DZ Terminal welcome (v1.0.39): the Termux-style help\n" +
+            "# \"catalog\", DZ-branded. Printed once per fresh session\n" +
+            "# start (bash --init-file runs this file for every new\n" +
+            "# interactive shell — one per tab). Quoted heredoc: no\n" +
+            "# expansion inside.\n" +
+            "cat << 'DZ_WELCOME_EOF'\n" +
+            "Welcome to DZ Terminal!\n" +
+            "\n" +
+            "Contact:   https://t.me/Dominic_aiBot\n" +
+            "GitHub:    https://github.com/zinmyo19/DZTerminal\n" +
+            "\n" +
+            "Working with packages:\n" +
+            "- Search:   pkg search <query>\n" +
+            "- Install:  pkg install <package>\n" +
+            "- Upgrade:  pkg upgrade\n" +
+            "\n" +
+            "Tips:\n" +
+            "- Storage:  ~/storage  (shared with your file manager)\n" +
+            "- Export/Import:  Home -> gear menu\n" +
+            "DZ_WELCOME_EOF\n"
         try {
             File(sessionInitFileHostPath(app)).writeText(content)
         } catch (_: Exception) {

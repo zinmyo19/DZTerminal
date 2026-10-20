@@ -1,60 +1,50 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- v1.0.36: root is now RelativeLayout with ANCHORED sizing for the
+     terminal container (below tab bar, above extra-keys). The v1.0.35
+     runtime geometry proved the old LinearLayout weight=1 container
+     measured 0 height on-device (TerminalView w=1440 h=0,
+     containerH=0) even though the XML was correct on paper — the
+     IME then bound (imeConn=6) but delivered zero input events,
+     because Gboard will not send text to a zero-height editor.
+     RelativeLayout anchor sizing derives the container height from
+     the anchors (window - header - tab bar - extra-keys) and has no
+     weight-distribution step that can collapse to 0. The container
+     keeps real height with the keyboard both open and closed. -->
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/console_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     android:background="@color/dz_console_bg">
 
+<!-- v1.0.39: the top header bar (BACK / Console / RESTART) is GONE —
+     Termux-clean look. The terminal now starts at the top of the
+     screen (below the status bar). Navigation replacement:
+     system BACK = Home (keyboard closed) / close keyboard (open);
+     the floating ⋮ button (top-right, over the terminal) opens
+     New tab / Restart session / Settings / Home. The tab bar
+     auto-hides for a single session (see rebuildTabs) and the
+     terminal container anchors below it — when the bar is GONE
+     the terminal extends to the very top. -->
+
+    <!-- Session tab bar (v1.0.20): horizontal scrollable tabs.
+         v1.0.39: anchored to the parent top (no header anymore) and
+         AUTO-HIDDEN when <= 1 session exists (rebuildTabs) — a
+         single session looks exactly like Termux; the bar appears
+         when a 2nd tab is opened. One tab per session (number +
+         close ×), "+" at the end adds a session (cap 8). -->
     <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingStart="8dp"
-        android:paddingEnd="8dp"
-        android:background="@drawable/steel_header">
-
-        <Button
-            android:id="@+id/console_back"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/back"
-            android:textColor="@color/dz_white"
-            android:background="@android:color/transparent" />
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/console_title"
-            android:textSize="17sp"
-            android:textStyle="bold"
-            android:textColor="@color/dz_white"
-            android:gravity="center" />
-
-        <Button
-            android:id="@+id/console_restart"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/restart"
-            android:textColor="@color/dz_green"
-            android:background="@android:color/transparent" />
-    </LinearLayout>
-
-    <!-- Session tab bar (v1.0.20): horizontal scrollable tabs directly
-         under the header. One tab per session (number + close ×),
-         "+" at the end adds a session (cap 8). Tabs are built in
-         ConsoleActivity.rebuildTabs(). -->
-    <LinearLayout
+        android:id="@+id/tab_bar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:background="@drawable/steel_header"
+        android:background="@color/dz_navy"
         android:paddingStart="8dp"
         android:paddingEnd="4dp"
-        android:paddingTop="4dp"
-        android:paddingBottom="4dp">
+        android:paddingTop="2dp"
+        android:paddingBottom="2dp"
+        android:visibility="gone">
 
         <HorizontalScrollView
             android:id="@+id/tab_bar_scroll"
@@ -91,26 +81,70 @@
         android:id="@+id/console_status"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_below="@id/tab_bar"
         android:padding="12dp"
         android:textColor="@color/dz_muted"
         android:textSize="14sp"
         android:visibility="gone" />
 
-    <com.termux.view.TerminalView
-        android:id="@+id/terminal_view"
+    <!-- v1.0.36: terminal container anchored below the tab bar and
+         above the extra-keys bar. Height is derived from the anchors
+         (window - header - tab bar - extra-keys) — no LinearLayout
+         weight step that can collapse to 0. Opaque black so the
+         terminal area is a black box even if the view mis-draws. -->
+    <FrameLayout
+        android:id="@+id/terminal_container"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:focusable="true"
-        android:focusableInTouchMode="true" />
+        android:layout_height="match_parent"
+        android:layout_below="@id/tab_bar"
+        android:layout_above="@id/extra_keys_container"
+        android:background="@android:color/black">
+
+        <com.termux.view.TerminalView
+            android:id="@+id/terminal_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
+            android:background="@android:color/black" />
+    </FrameLayout>
+
+    <!-- v1.0.39: floating menu button — small, semi-transparent,
+         top-right OVER the terminal (declared after the container
+         so it draws on top). Replaces the removed header's
+         functions: New tab / Restart session / Settings / Home.
+         NOT focusable (v1.0.33: TerminalView must stay the only
+         focusable view or the IME starves). Small 40dp target +
+         55% alpha so it never blocks typing. -->
+    <Button
+        android:id="@+id/console_menu_button"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:text="⋮"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="#BFFFFFFF"
+        android:background="@drawable/menu_fab_bg"
+        android:alpha="0.55"
+        android:minWidth="0dp"
+        android:minHeight="0dp"
+        android:padding="0dp"
+        android:focusable="false"
+        android:focusableInTouchMode="false" />
 
     <!-- Termux-style extra-keys bar (v1.0.10). Two rows built in
-         ConsoleActivity. Sits below the terminal and above the system
-         keyboard (adjustResize) — it never covers the terminal. -->
+         ConsoleActivity. Pinned to the bottom; sits below the
+         terminal and above the system keyboard (adjustResize) —
+         it never covers the terminal. -->
     <LinearLayout
         android:id="@+id/extra_keys_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
         android:orientation="vertical"
-        android:background="@drawable/steel_header" />
-</LinearLayout>
+        android:background="@color/dz_navy" />
+</RelativeLayout>
