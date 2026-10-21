@@ -66,6 +66,25 @@
             android:exported="false"
             android:windowSoftInputMode="adjustResize" />
 
+        <!-- v1.0.49 batch 1: Quick Run / Snippets / Backup. -->
+        <activity
+            android:name=".QuickRunActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".SnippetsActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".BackupActivity"
+            android:exported="false" />
+
+        <!-- v1.0.50: Sessions (replaces the duplicate Console card). -->
+        <activity
+            android:name=".SessionsActivity"
+            android:exported="false" />
+
         <activity
             android:name=".CommunityActivity"
             android:exported="false" />

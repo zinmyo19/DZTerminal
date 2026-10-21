@@ -1,12 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- v1.0.31: brushed-steel header — same texture as the body
-     background, lifted with a faint white scrim so the header
-     band reads as brushed steel (see final mockup). -->
-<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:drawable="@drawable/steel_bg" />
-    <item>
-        <shape android:shape="rectangle">
-            <solid android:color="#1AFFFFFF" />
-        </shape>
-    </item>
-</layer-list>
+<!-- Brushed-steel header band: a faint white scrim over the
+     window's steel background (the root already paints
+     @drawable/steel_bg edge to edge), so the band reads as
+     lifted brushed steel.
+
+     v1.0.51 FIX: this drawable used to be a layer-list whose
+     first item was @drawable/steel_bg itself. A wrap_content
+     view's measured size includes its background's intrinsic
+     size, and the bitmap tile's intrinsic height is 800px —
+     so the Home header silently measured ~800 device px tall
+     and gravity="center" parked the title pill in the middle
+     of that empty band (the big dead space above the pill and
+     shield on tall phones). A shape has no intrinsic size, so
+     the header now wraps the pill exactly. Never put the
+     bitmap (or any fixed-size drawable) back in here. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#1AFFFFFF" />
+</shape>

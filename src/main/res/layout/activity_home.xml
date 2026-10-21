@@ -1,52 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- v1.0.44: RESPONSIVE — fixes the short-screen overflow
-     (wife's Oppo: Programs/QPYPI clipped, gear pushed off the
-     bottom edge — and the gear carries Settings/About/
-     Export/Import, so it was reported as "Settings is missing
-     on the home page"). Three construction changes:
-     (1) The gear row MOVED OUT of the content column to be the
-         root's LAST child, and the content column is now
-         layout_height=0dp + layout_weight=1: the middle absorbs
-         ALL size error, so the gear sits at the bottom of the
-         window BY CONSTRUCTION — it cannot be pushed off-screen.
-     (2) MainActivity.fitHomeToScreen() scales the shield +
-         cards to fit the middle column's MEASURED height
-         (scale = avail/design, clamped 0.62..1.0, width and
-         height scaled together — aspect preserved, no squash;
-         floor-rounded so it can never re-overflow by a pixel).
-     (3) Top stays tight per the user: header padding 0 (banner
-         hugs the top), shield wrapper margins 0 (big shield
-         sits right under the banner). On tall screens the scale
-         is exactly 1.0 — v1.0.43 design sizes, group at the top,
-         freed space collects between the cards and the
-         bottom-pinned gear.
-     Fit (design total 637dp incl. header ~31 + gear row 56):
-       usable 560 -> middle 473, scale 0.856, total 559
-       usable 600 -> middle 513, scale 0.931, total 599
-       usable 800 -> scale 1.0 (design sizes), gear at bottom
-     v1.0.43: RAISED (user: "home logo တွေက နိမ့်နေတယ်" — the
-     logos sit too low) + big shield press glow.
-     Glow: home_terminal_button src is now a selector
-     (@drawable/home_shield_selector) -> pressed/focused shows
-     home_shield_active (green rim + aura), same feedback the 4
-     small cards get from @drawable/shield_card.
-     Raise (before -> after): header band padding 2 -> 0dp,
-     banner plate padding 4 -> 3dp, big shield 200x236 -> 200x220,
-     shield wrapper marginBottom 2 -> 0dp, cards 140x168 -> 140x158,
-     gear row marginTop 4 -> 2dp. Header ~37 -> ~31dp, content
-     ~646 -> ~606dp, total ~683 -> ~637dp (-46dp): the whole group
-     starts higher and the gear lifts ~46dp off the bottom edge.
-     Gear keeps marginBottom 6dp + content paddingBottom 6dp, so
-     it stays fully visible (no repeat of v1.0.34's clipping).
-     v1.0.36: tightened further (user: push up again).
-     v1.0.35: tighten-up — everything moves UP, gear fully visible.
-     v1.0.34's gear was half-clipped at the bottom edge and the
-     banner sat too low. Tightened: header padding 10 -> 4dp,
-     banner plate padding 8 -> 6dp, banner text 22 -> 20sp,
-     content top padding 6 -> 0dp, content bottom 6 -> 10dp,
-     shield margins 4/8 -> 0/4dp, card row gaps 10 -> 6dp,
-     gear row marginTop 2 -> 6dp + marginBottom 10dp (the gear
-     never sits flush with the screen edge again). -->
+<!-- v1.0.49: TEN wide shield cards (2 x 5): the original four
+     (Console, Editor, Programs, QPYPI) plus Quick Run, Snippets,
+     Clone Repo, Pkg Manager, Backup, QR Script — per the
+     approved 10-card mockup. Construction is unchanged from
+     v1.0.44: the gear row is the root's LAST child (pinned to
+     the window bottom by construction), the middle column is
+     0dp + weight 1 and absorbs all size error, and
+     MainActivity.fitHomeToScreen() scales the flexible block
+     (big shield 200x220 + 5 card rows of 158x80, 12dp gap,
+     4dp row margins) to the middle column's measured height,
+     clamped 0.62..1.0, floor-rounded. Wide cards use the new
+     @drawable/shield_card_wide family (200x96 viewport shield).
+     Card glyph 20sp / label 14sp so the pair fits the 80dp
+     design height even at the Oppo's ~0.73 scale (~58dp). -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/home_root"
     android:layout_width="match_parent"
@@ -62,7 +28,8 @@
         android:orientation="horizontal"
         android:gravity="center"
         android:background="@drawable/steel_header"
-        android:padding="0dp">
+        android:paddingTop="10dp"
+        android:paddingBottom="6dp">
 
         <TextView
             android:layout_width="wrap_content"
@@ -78,9 +45,8 @@
             android:textColor="@color/dz_white" />
     </LinearLayout>
 
-    <!-- v1.0.44: height 0dp + weight 1 — this middle column
-         absorbs all leftover/shortfall; its children are
-         runtime-scaled to fit it (fitHomeToScreen). -->
+    <!-- Weighted middle column: absorbs all leftover/shortfall;
+         its children are runtime-scaled to fit (fitHomeToScreen). -->
     <LinearLayout
         android:id="@+id/home_content"
         android:layout_width="match_parent"
@@ -89,12 +55,11 @@
         android:orientation="vertical"
         android:paddingStart="16dp"
         android:paddingEnd="16dp"
-        android:paddingTop="0dp"
+        android:paddingTop="8dp"
         android:paddingBottom="6dp">
 
-        <!-- Big center shield logo button: FIXED 200x220dp.
-             v1.0.43: src is a selector — pressed/focused shows the
-             green-glow variant, same as the small shield cards. -->
+        <!-- Big center shield logo button: FIXED 200x220dp,
+             selector src (pressed/focused = green glow). -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -114,7 +79,20 @@
                 android:contentDescription="@string/card_console" />
         </LinearLayout>
 
-        <!-- Shield card row 1: FIXED 140x158dp cards, 16dp gap -->
+        <!-- v1.0.52: weighted spacers (this one + one after each
+             card row) share out any leftover height evenly, so
+             on tall screens the stack fills the column instead
+             of pooling one big gap above the gear. They are NOT
+             in fitHomeToScreen's math: the scaler guarantees
+             shield+rows+fixed <= column height, and when space
+             is tight the spacers collapse to 0 and the rows'
+             own 4dp margins remain the minimum gaps. -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <!-- Card row 1: Sessions / Editor -->
         <LinearLayout
             android:id="@+id/home_row1"
             android:layout_width="match_parent"
@@ -124,61 +102,66 @@
             android:layout_marginBottom="4dp">
 
             <LinearLayout
-                android:id="@+id/card_console"
-                android:layout_width="140dp"
-                android:layout_height="158dp"
+                android:id="@+id/card_sessions"
+                android:layout_width="158dp"
+                android:layout_height="80dp"
                 android:orientation="vertical"
                 android:gravity="center"
                 android:clickable="true"
                 android:focusable="true"
-                android:background="@drawable/shield_card">
+                android:background="@drawable/shield_card_wide">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/terminal_glyph"
-                    android:textSize="24sp"
+                    android:text="▤"
+                    android:textSize="20sp"
                     android:textStyle="bold"
                     android:textColor="@color/dz_green" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
-                    android:text="@string/card_console"
-                    android:textSize="16sp"
+                    android:layout_marginTop="2dp"
+                    android:text="@string/card_sessions"
+                    android:textSize="14sp"
                     android:textColor="@color/dz_white" />
             </LinearLayout>
 
             <LinearLayout
                 android:id="@+id/card_editor"
-                android:layout_width="140dp"
-                android:layout_height="158dp"
-                android:layout_marginStart="16dp"
+                android:layout_width="158dp"
+                android:layout_height="80dp"
+                android:layout_marginStart="12dp"
                 android:orientation="vertical"
                 android:gravity="center"
                 android:clickable="true"
                 android:focusable="true"
-                android:background="@drawable/shield_card">
+                android:background="@drawable/shield_card_wide">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="✎"
-                    android:textSize="24sp"
+                    android:textSize="20sp"
                     android:textColor="@color/dz_green" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
+                    android:layout_marginTop="2dp"
                     android:text="@string/card_editor"
-                    android:textSize="16sp"
+                    android:textSize="14sp"
                     android:textColor="@color/dz_white" />
             </LinearLayout>
         </LinearLayout>
 
-        <!-- Shield card row 2: FIXED 140x158dp cards, 16dp gap -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <!-- Card row 2: Programs / QPYPI -->
         <LinearLayout
             android:id="@+id/home_row2"
             android:layout_width="match_parent"
@@ -189,64 +172,274 @@
 
             <LinearLayout
                 android:id="@+id/card_programs"
-                android:layout_width="140dp"
-                android:layout_height="158dp"
+                android:layout_width="158dp"
+                android:layout_height="80dp"
                 android:orientation="vertical"
                 android:gravity="center"
                 android:clickable="true"
                 android:focusable="true"
-                android:background="@drawable/shield_card">
+                android:background="@drawable/shield_card_wide">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="&lt;/&gt;"
-                    android:textSize="24sp"
+                    android:textSize="20sp"
                     android:textStyle="bold"
                     android:textColor="@color/dz_green" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
+                    android:layout_marginTop="2dp"
                     android:text="@string/card_programs"
-                    android:textSize="16sp"
+                    android:textSize="14sp"
                     android:textColor="@color/dz_white" />
             </LinearLayout>
 
             <LinearLayout
                 android:id="@+id/card_qpypi"
-                android:layout_width="140dp"
-                android:layout_height="158dp"
-                android:layout_marginStart="16dp"
+                android:layout_width="158dp"
+                android:layout_height="80dp"
+                android:layout_marginStart="12dp"
                 android:orientation="vertical"
                 android:gravity="center"
                 android:clickable="true"
                 android:focusable="true"
-                android:background="@drawable/shield_card">
+                android:background="@drawable/shield_card_wide">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="▦"
-                    android:textSize="24sp"
+                    android:textSize="20sp"
                     android:textColor="@color/dz_green" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
+                    android:layout_marginTop="2dp"
                     android:text="@string/card_qpypi"
-                    android:textSize="16sp"
+                    android:textSize="14sp"
                     android:textColor="@color/dz_white" />
             </LinearLayout>
         </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <!-- Card row 3: Quick Run / Snippets (new in v1.0.49) -->
+        <LinearLayout
+            android:id="@+id/home_row3"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginBottom="4dp">
+
+            <LinearLayout
+                android:id="@+id/card_quickrun"
+                android:layout_width="158dp"
+                android:layout_height="80dp"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="@drawable/shield_card_wide">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="▶"
+                    android:textSize="20sp"
+                    android:textColor="@color/dz_green" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="@string/card_quick_run"
+                    android:textSize="14sp"
+                    android:textColor="@color/dz_white" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/card_snippets"
+                android:layout_width="158dp"
+                android:layout_height="80dp"
+                android:layout_marginStart="12dp"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="@drawable/shield_card_wide">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="☰"
+                    android:textSize="20sp"
+                    android:textColor="@color/dz_green" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="@string/card_snippets"
+                    android:textSize="14sp"
+                    android:textColor="@color/dz_white" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <!-- Card row 4: Clone Repo / Pkg Manager (batch 2 —
+             cards visible now, screens land in the next build) -->
+        <LinearLayout
+            android:id="@+id/home_row4"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginBottom="4dp">
+
+            <LinearLayout
+                android:id="@+id/card_clone"
+                android:layout_width="158dp"
+                android:layout_height="80dp"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="@drawable/shield_card_wide">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="↓"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/dz_green" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="@string/card_clone_repo"
+                    android:textSize="14sp"
+                    android:textColor="@color/dz_white" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/card_pkg"
+                android:layout_width="158dp"
+                android:layout_height="80dp"
+                android:layout_marginStart="12dp"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="@drawable/shield_card_wide">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="▣"
+                    android:textSize="20sp"
+                    android:textColor="@color/dz_green" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="@string/card_pkg_manager"
+                    android:textSize="14sp"
+                    android:textColor="@color/dz_white" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <!-- Card row 5: Backup / QR Script (QR is batch 3) -->
+        <LinearLayout
+            android:id="@+id/home_row5"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginBottom="0dp">
+
+            <LinearLayout
+                android:id="@+id/card_backup"
+                android:layout_width="158dp"
+                android:layout_height="80dp"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="@drawable/shield_card_wide">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="↻"
+                    android:textSize="20sp"
+                    android:textColor="@color/dz_green" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="@string/card_backup"
+                    android:textSize="14sp"
+                    android:textColor="@color/dz_white" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/card_qr"
+                android:layout_width="158dp"
+                android:layout_height="80dp"
+                android:layout_marginStart="12dp"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="@drawable/shield_card_wide">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="▩"
+                    android:textSize="20sp"
+                    android:textColor="@color/dz_green" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="@string/card_qr_script"
+                    android:textSize="14sp"
+                    android:textColor="@color/dz_white" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
     </LinearLayout>
 
-    <!-- v1.0.44: gear row is the root's LAST child — it sits
-         at the bottom of the window by construction (the middle
-         column above it is weighted), so it can never be pushed
-         off-screen on short phones. -->
+    <!-- Gear row: the root's LAST child — pinned to the window
+         bottom by construction (the middle column above it is
+         weighted), so it can never be pushed off-screen. -->
     <LinearLayout
         android:id="@+id/home_gear_row"
         android:layout_width="match_parent"

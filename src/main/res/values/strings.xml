@@ -14,10 +14,17 @@
     <string name="menu">⋮</string>
     <string name="terminal_glyph">&gt;_</string>
     <string name="card_console">Console</string>
+    <string name="card_sessions">Sessions</string>
     <string name="card_editor">Editor</string>
     <string name="card_programs">Programs</string>
     <string name="card_qpypi">QPYPI</string>
     <string name="card_community">Community</string>
+    <string name="card_quick_run">Quick Run</string>
+    <string name="card_snippets">Snippets</string>
+    <string name="card_clone_repo">Clone Repo</string>
+    <string name="card_pkg_manager">Pkg Manager</string>
+    <string name="card_backup">Backup</string>
+    <string name="card_qr_script">QR Script</string>
     <string name="back">Back</string>
     <string name="save">Save</string>
     <string name="run">Run</string>

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- v1.0.49: Backup — zip backups of the DZ home folder into
+     /storage/emulated/0/DZTerminal/backups, floating menu. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:background="@drawable/steel_bg">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="12dp"
+            android:text="Backups of your DZ Terminal home folder (scripts and files), stored in /storage/emulated/0/DZTerminal/backups. Tap a backup to restore it. Long-press to delete."
+            android:textColor="@color/dz_muted"
+            android:textSize="13sp" />
+
+        <Button
+            android:id="@+id/backup_create"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_marginEnd="12dp"
+            android:layout_marginBottom="8dp"
+            android:text="Create backup now" />
+
+        <ListView
+            android:id="@+id/backup_list"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:divider="@color/dz_card_stroke"
+            android:dividerHeight="1dp" />
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/backup_menu_button"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_gravity="top|end"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:text="⋮"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="#BFFFFFFF"
+        android:background="@drawable/menu_fab_bg"
+        android:alpha="0.55"
+        android:minWidth="0dp"
+        android:minHeight="0dp"
+        android:padding="0dp"
+        android:focusable="false"
+        android:focusableInTouchMode="false" />
+</FrameLayout>

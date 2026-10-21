@@ -152,8 +152,53 @@ export PATH=$JAVA_HOME/bin:$PATH
 # catalog; nothing else moves). The catalog printed flush against
 # the left edge and its first letters were half-clipped on
 # physical phones.
-VERSION_NAME="1.0.46"
-VERSION_CODE=47
+# v1.0.47: Editor exit fix — the EditText's default freezesText
+# resurrected unsaved buffers after activity recreation, and
+# the v1.0.40 BACK handler could loop on its keyboard check so
+# the editor could not be left at all. Now: freezesText=false,
+# BACK stage 1 closes the keyboard only when really visible
+# (WindowInsets), stage 2 (and menu Home) exits via a
+# Save/Discard/Cancel prompt when the buffer differs from disk.
+# v1.0.48: Editor menu — the "Home" item is replaced by an
+# explicit "Exit" (never saves; one confirm when the buffer is
+# dirty), at the user's request for a plain no-save way out.
+# v1.0.49: Home expansion batch 1 (approved 10-card mockup):
+# Home is now ten WIDE shield cards (2 x 5, new shield_card_wide
+# drawable family, scaler design = shield 220 + 5 rows of 80).
+# New screens: Quick Run (all home + QPython scripts, favorites
+# pinned by long-press, tap runs in a fresh tab), Snippets
+# (saved commands, TSV store, tap runs in a fresh tab), Backup
+# (zip backup/restore of the home folder to
+# /storage/emulated/0/DZTerminal/backups). Clone Repo / Pkg
+# Manager / QR Script cards are visible but show a
+# "Coming in the next update" toast — batches 2 and 3.
+# v1.0.50: the Console card duplicated the big shield (both
+# opened the Console) — at the user's call it becomes the
+# Sessions card: running tabs listed from DzTerminalApp.sessions,
+# a tap sets currentSessionIndex and the Console attaches that
+# tab; with no running session it toasts "No running sessions"
+# and opens a fresh Console. The shield still opens the Console.
+# v1.0.51: Home pulled UP (user's marked screenshot). Root
+# cause was NOT the layout: steel_header's layer-list held the
+# steel_bg bitmap, whose 800px intrinsic height inflated the
+# wrap_content header to ~800 device px and gravity="center"
+# parked the title pill mid-band — dead space above the pill
+# AND above the shield. steel_header is now a scrim-only shape
+# (no intrinsic size); header wraps the pill (10dp top / 6dp
+# bottom padding) and home_content gets 8dp top padding (the
+# scaler already counts content padding as fixed px). The
+# reclaimed ~200dp goes through fitHomeToScreen as usual: the
+# shield/cards scale up toward 1.0 and the stack starts right
+# under the pill. Gear row untouched (still pinned bottom).
+# v1.0.52: even spacing (user's call after the v1.0.51 shot:
+# the gear sat alone at the bottom with a big empty band above
+# it). Six weighted spacer Views inside home_content (after the
+# shield + after each card row) share leftover height evenly;
+# they are outside fitHomeToScreen's math — the scaler already
+# guarantees the stack fits, and on short screens the spacers
+# collapse to 0, leaving the 4dp row margins as minimum gaps.
+VERSION_NAME="1.0.52"
+VERSION_CODE=53
 APK_NAME="DZTerminal-${VERSION_NAME}.apk"
 
 SDK=~/android-sdk

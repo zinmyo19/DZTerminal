@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- v1.0.50: Sessions — the running terminal sessions (tabs)
+     in one list; a tap jumps into that Console tab. Same frame
+     as the other list screens: steel background, note on top,
+     list below, floating menu button. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:background="@drawable/steel_bg">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="14dp"
+            android:text="Tap a session to jump into its Console tab."
+            android:textSize="13sp"
+            android:textColor="@color/dz_muted" />
+
+        <ListView
+            android:id="@+id/sessions_list"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:divider="@color/dz_card_stroke"
+            android:dividerHeight="1dp" />
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/sessions_menu_button"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_gravity="top|end"
+        android:layout_margin="10dp"
+        android:background="@drawable/menu_fab_bg"
+        android:alpha="0.55"
+        android:text="⋮"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="@color/dz_white" />
+</FrameLayout>

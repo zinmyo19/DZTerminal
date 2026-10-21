@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- v1.0.49: wide shield-shaped Home card background selector. -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_focused="true" android:drawable="@drawable/shield_bg_active_wide" />
+    <item android:state_pressed="true" android:drawable="@drawable/shield_bg_active_wide" />
+    <item android:drawable="@drawable/shield_bg_wide" />
+</selector>

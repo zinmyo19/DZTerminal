@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- v1.0.49: WIDE heater-shield card background (default state)
+     for the 10-card Home. Same shield path family as
+     shield_bg.xml, mapped to a 200x96 viewport (x2 / y0.8). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="240dp"
+    android:height="115dp"
+    android:viewportWidth="200"
+    android:viewportHeight="96">
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#332EEA7A"
+        android:strokeWidth="7"
+        android:pathData="M100,3.2 C120,9.6 160,12.8 188,14.4 L188,49.6 C188,70.4 148,83.2 100,92.8 C52,83.2 12,70.4 12,49.6 L12,14.4 C40,12.8 80,9.6 100,3.2 Z" />
+    <path
+        android:fillColor="#161B24"
+        android:strokeColor="#9AA4B5"
+        android:strokeWidth="2.5"
+        android:pathData="M100,3.2 C120,9.6 160,12.8 188,14.4 L188,49.6 C188,70.4 148,83.2 100,92.8 C52,83.2 12,70.4 12,49.6 L12,14.4 C40,12.8 80,9.6 100,3.2 Z" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#454E5E"
+        android:strokeWidth="1"
+        android:pathData="M100,11.2 C116,16 148,18.4 172,20 L172,48.8 C172,65.6 138,76 100,84 C62,76 28,65.6 28,48.8 L28,20 C52,18.4 84,16 100,11.2 Z" />
+</vector>

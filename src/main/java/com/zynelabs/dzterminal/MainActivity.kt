@@ -16,7 +16,8 @@ import kotlin.math.min
 
 /**
  * Home screen — QPython-home-style layout:
- * big center shield logo button + 4 shield cards.
+ * big center shield logo button + shield cards.
+ * v1.0.49: TEN wide cards (2 x 5) per the approved mockup.
  * v1.0.31: shield Home per the approved final mockup.
  * The Community card was removed from Home (CommunityActivity
  * still exists, just unreachable from Home — reversible).
@@ -57,8 +58,11 @@ class MainActivity : Activity() {
             }
             popup.show()
         }
-        card(R.id.card_console).setOnClickListener {
-            startActivity(Intent(this, ConsoleActivity::class.java))
+        // v1.0.50: the old Console card duplicated the big shield
+        // (both opened the Console) — it is now the Sessions card.
+        // The shield still opens the Console directly.
+        card(R.id.card_sessions).setOnClickListener {
+            startActivity(Intent(this, SessionsActivity::class.java))
         }
         card(R.id.card_editor).setOnClickListener {
             startActivity(Intent(this, EditorActivity::class.java))
@@ -68,6 +72,23 @@ class MainActivity : Activity() {
         }
         card(R.id.card_qpypi).setOnClickListener {
             startActivity(Intent(this, QpypiActivity::class.java))
+        }
+        // v1.0.49 batch 1: Quick Run / Snippets / Backup screens.
+        card(R.id.card_quickrun).setOnClickListener {
+            startActivity(Intent(this, QuickRunActivity::class.java))
+        }
+        card(R.id.card_snippets).setOnClickListener {
+            startActivity(Intent(this, SnippetsActivity::class.java))
+        }
+        card(R.id.card_backup).setOnClickListener {
+            startActivity(Intent(this, BackupActivity::class.java))
+        }
+        // Batch 2/3 cards are visible per the approved mockup;
+        // their screens land in the next builds.
+        for (id in intArrayOf(R.id.card_clone, R.id.card_pkg, R.id.card_qr)) {
+            card(id).setOnClickListener {
+                Toast.makeText(this, "Coming in the next update", Toast.LENGTH_SHORT).show()
+            }
         }
         // v1.0.44: scale the shield block to fit the window
         // (see fitHomeToScreen). Runs on every layout pass but
@@ -95,7 +116,8 @@ class MainActivity : Activity() {
      * at the bottom of the window BY CONSTRUCTION and the
      * middle absorbs all size error. This method then scales
      * the middle's flexible block — big shield (200x220) +
-     * cards (140x158 x2 rows) — to fit the middle column's
+     * card rows (v1.0.49: five wide rows of 158x80) — to fit
+     * the middle column's
      * MEASURED height: scale = (content height - the column's
      * fixed padding/gaps) / design, clamped to [0.62, 1.0].
      * Width and height scale by the SAME factor, so shields
@@ -114,25 +136,26 @@ class MainActivity : Activity() {
         val density = resources.displayMetrics.density
         fun dpF(v: Float) = v * density
 
-        val row1 = findViewById<View>(R.id.home_row1)
-        val row2 = findViewById<View>(R.id.home_row2)
-        fun bottomMargin(v: View) =
-            (v.layoutParams as LinearLayout.LayoutParams).bottomMargin
+        fun bottomMargin(id: Int) =
+            (findViewById<View>(id).layoutParams as LinearLayout.LayoutParams).bottomMargin
 
         // Fixed inside the middle column (px): its vertical
-        // padding + the two 4dp row gaps. Header and gear row
-        // are NOT in this math — they are outside the weighted
-        // column and fit by construction.
+        // padding + the four 4dp row gaps (rows 1-4). Header
+        // and gear row are NOT in this math — they are outside
+        // the weighted column and fit by construction.
         val fixedPx = content.paddingTop + content.paddingBottom +
-            bottomMargin(row1) + bottomMargin(row2)
-        // Flexible block at design size (px): 220 + 158 + 158.
-        val designFlexPx = dpF(220f + 158f + 158f)
+            bottomMargin(R.id.home_row1) + bottomMargin(R.id.home_row2) +
+            bottomMargin(R.id.home_row3) + bottomMargin(R.id.home_row4)
+        // Flexible block at design size (px): shield 220 +
+        // five wide card rows of 80 (v1.0.49 ten-card Home).
+        val designFlexPx = dpF(220f + 80f * 5)
         var scale = (availH - fixedPx) / designFlexPx
-        // Narrow-screen guard: card row = 2 cards + 16dp gap,
-        // big shield = 200dp, both inside the column padding.
+        // Narrow-screen guard: card row = 2 wide cards +
+        // 12dp gap, big shield = 200dp, both inside the
+        // column padding.
         val availW = content.width - content.paddingStart - content.paddingEnd
         if (availW > 0) {
-            scale = min(scale, availW / dpF(140f * 2 + 16f))
+            scale = min(scale, availW / dpF(158f * 2 + 12f))
             scale = min(scale, availW / dpF(200f))
         }
         val s = scale.coerceIn(0.62f, 1.0f)
@@ -142,11 +165,14 @@ class MainActivity : Activity() {
             R.id.home_terminal_button,
             floor(dpF(200f) * s).toInt(), floor(dpF(220f) * s).toInt()
         )
-        val cardW = floor(dpF(140f) * s).toInt()
-        val cardH = floor(dpF(158f) * s).toInt()
+        val cardW = floor(dpF(158f) * s).toInt()
+        val cardH = floor(dpF(80f) * s).toInt()
         for (id in intArrayOf(
-            R.id.card_console, R.id.card_editor,
-            R.id.card_programs, R.id.card_qpypi
+            R.id.card_sessions, R.id.card_editor,
+            R.id.card_programs, R.id.card_qpypi,
+            R.id.card_quickrun, R.id.card_snippets,
+            R.id.card_clone, R.id.card_pkg,
+            R.id.card_backup, R.id.card_qr
         )) {
             setSize(id, cardW, cardH)
         }
